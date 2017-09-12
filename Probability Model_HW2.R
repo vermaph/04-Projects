@@ -32,7 +32,7 @@ g<-g+geom_ribbon(data = dat[dat$x>xx,],aes(x=x,ymax=y),ymin=0,fill="orange", alp
 g
 
 #(d)P(0<=x<4)
-pnorm((4-3)/(4),mean = 3, sd = 4)-pnorm((0-3)/(4),mean = 3, sd = 4)
+pnorm((4-3)/(4),lower.tail = TRUE)-pnorm((0-3)/(4),lower.tail = TRUE)
 xx=c(0,4)
 g<-ggplot(data=dat,aes(x=x,y=y))+geom_line()+ggtitle("Normal Distribution")+theme(plot.title = element_text(hjust = 0.5))
 g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks = c(-12,-9,-6,-3,0,3,6,round(xx,2),12))+geom_vline(xintercept = xx)
