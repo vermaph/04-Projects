@@ -6,6 +6,37 @@ geometry: margin=1.5cm
 output: pdf_document
 ---
 
+#Solution 15
+
+R program that takes an uniform distribution and generates random variables from an exponential distribution.
+
+
+```{r echo = TRUE, include = TRUE, eval = TRUE}
+library("ggplot2")
+x<-runif(10000,min = 0,max = 1)
+y<-dexp(x,rate = 3)
+dat<-data.frame(x,y)
+g<-ggplot(data=dat,aes(x=x,y=y))+ggtitle("X: Uniform Distribution, Y: Exponential Distribution")
+g<-g+theme(plot.title = element_text(hjust = 0.5))+geom_line()
+g
+
+```
+&nbsp; 
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+
 #Solution 18
 ```{r echo=TRUE, include=TRUE}
 
@@ -29,11 +60,20 @@ g<-g+geom_ribbon(data = dat[dat$x<7,],aes(x=x,ymax=y),ymin=0,fill="red", alpha=0
 g
 pnorm((7-3)/(4),lower.tail = TRUE)
 ```
-  
-    
-  
-  
-  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+ 
+
 (b)  
 To solve: P(X>-2)  
 ```{r echo=TRUE, include=TRUE}
@@ -46,7 +86,28 @@ g
 #P(X>-2) = 1-P(X<=-2)
 1-pnorm((-2-3)/(4),lower.tail = TRUE)
 ```
-  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+
 (c)    
 P(X>x)=0.05  
   
@@ -54,11 +115,25 @@ P(X>x)=0.05
 xx=qnorm(0.05,mean = 3,sd = 4,lower.tail = FALSE)
 g<-ggplot(data=dat,aes(x=x,y=y))+geom_line()+ggtitle("Normal Distribution")
 g<-g+theme(plot.title = element_text(hjust = 0.5))
-g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks = c(-12,-9,-6,-3,0,3,6,round(xx,2),12))+geom_vline(xintercept = xx)
+g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks=round(c(-12,-9,-6,xx,0,3,6,round(xx,2),12),2))+geom_vline(xintercept = xx)
 g<-g+geom_ribbon(data = dat[dat$x>xx,],aes(x=x,ymax=y),ymin=0,fill="orange", alpha=0.5)
 g
 qnorm(0.05,mean = 3,sd = 4,lower.tail = FALSE)
 ```
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
 
 
 (d)  
@@ -73,7 +148,25 @@ g<-g+geom_ribbon(data = dat[dat$x>0 & dat$x<4,],aes(x=x,ymax=y),ymin=0,fill="pur
 g
 pnorm((4-3)/(4),lower.tail = TRUE)-pnorm((0-3)/(4),lower.tail = TRUE)
 ```
-  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
   
 (e)  
 P(|X|>|x|) = 0.05
