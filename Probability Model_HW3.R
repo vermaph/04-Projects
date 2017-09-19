@@ -1,7 +1,3 @@
-install.packages("lattice")
-
-library(lattice)
-
 library("ggplot2")
 x<-1:50
 y<-dpois(x,lambda = 6.7)
@@ -41,7 +37,7 @@ x<-rpois(100,3)
 y<-x^2
 
 #a
-hist(y,main = "Histogram of y (Poisson)",col = "blue",xlab = "Y", ylab = "Density")
+hist(y,main = "Histogram of y (1st part)",col = "blue",xlab = "Y", ylab = "Density")
 
 dt<-data.frame(y_bar=0,sd=0)  #Initializing an empty data frame
 for (i in 1:1000) {  #looping 1000 times to store y_bar in dt
@@ -54,11 +50,11 @@ dt<-rbind(dt,cbind(y_bar,sd))
 dt<-data.frame(dt[2:1001,])
 
 #b
-hist(dt$y_bar,col = "blue",density = 20, main = "Histogram of y_bar (Poisson)") 
+hist(dt$y_bar,col = "blue",density = 20, main = "Histogram of y_bar (1st part)") 
 
 u_bar<-mean(dt$y_bar)
 dt$z<-with(dt, (dt$y_bar - u_bar)/(dt$sd/10))
-hist(dt$z,density = 20,col = "blue", main = "Histogram of Z & fitted normal curve (Poisson)",xlim = c(-4,3),ylim = c(0,0.45),probability = TRUE,xlab = "Z",ylab = "Density")
+hist(dt$z,density = 20,col = "blue", main = "Histogram of Z & fitted normal curve (1st part)",xlim = c(-4,3),ylim = c(0,0.45),probability = TRUE,xlab = "Z",ylab = "Density")
 par(new = TRUE)
 
 #c
@@ -71,7 +67,7 @@ x<-rexp(100,1/3)
 y<-x^2
 
 
-hist(y,main = "Histogram of Y (Exponential)", col = "red",xlab = "Y", ylab = "Density")
+hist(y,main = "Histogram of Y (2nd part)", col = "red",xlab = "Y", ylab = "Density")
 
 dt<-data.frame(y_bar=0,sd=0)  #Initializing an empty data frame
 for (i in 1:1000) {  #looping 1000 times to store y_bar in dt
@@ -84,11 +80,11 @@ for (i in 1:1000) {  #looping 1000 times to store y_bar in dt
 dt<-data.frame(dt[2:1001,])
 
 
-hist(dt$y_bar,col = "red",density = 20, main = "Histogram of y_bar (Exponential)") 
+hist(dt$y_bar,col = "red",density = 20, main = "Histogram of y_bar (2nd part)") 
 
 u_bar<-mean(dt$y_bar)
 dt$z<-with(dt, (dt$y_bar - u_bar)/(dt$sd/10))
-hist(dt$z,density = 20,col = "red", main = "Histogram of Z & fitted normal curve (Exponential)",xlim = c(-4,3),ylim = c(0,0.45),probability = TRUE,xlab = "Z",ylab = "Density")
+hist(dt$z,density = 20,col = "red", main = "Histogram of Z & fitted normal curve (2nd part)",xlim = c(-4,3),ylim = c(0,0.45),probability = TRUE,xlab = "Z",ylab = "Density")
 par(new = TRUE)
 plot(seq(-4,4,by = 0.005),dnorm(seq(-4,4,by = 0.005)),xlim = c(-4,3),ylim = c(0,0.45),xlab = "Z",ylab = "Density")
 
