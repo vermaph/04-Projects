@@ -73,7 +73,6 @@ g
 
 
 #d
-
 x<-rexp(100,1/3)
 y<-x^2
 dat<-data.frame(x,y)

@@ -1,0 +1,9 @@
+LIBNAME NH "/home/vermaph0/sasuser.v94";  /*LIBRARY NAME*/
+LIBNAME PBCD_H XPORT "/home/vermaph0/sasuser.v94/PBCD_H.XPT"; /*LOCATE FILE*/
+
+;
+PROC COPY IN = PBCD_H OUT = NH;
+RUN;
+
+PROC CONTENTS DATA = NH.PBCD_H POSITION;
+RUN;
