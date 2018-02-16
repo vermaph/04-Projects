@@ -11,5 +11,5 @@ Hello there visitor.
 
 * This repository is most useful for someone who wants to evaluate my way/style of writing codes for a recruitment.
 
-* If that is the case, I would also kindly request you to check my other folders, where I will be adding more codes of my pet projects
+* If that is the case, I would also kindly request you to check my other folders, where I will be adding codes for some of my pet projects
 
