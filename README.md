@@ -7,7 +7,7 @@ Hello there visitor.
 
 * The different submssions have been put under folders for different subjects.
 
-* All the submission codes are here written in R. 
+* All the submission codes are written in R. 
 
 * This repository is most useful for someone who wants to evaluate my way/style of writing codes for a recruitment.
 
