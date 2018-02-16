@@ -1,8 +1,0 @@
----
-title: 
-output:
-pdf_document: default
-html_document: pdf_document
----
-#Solution 15  
-  
