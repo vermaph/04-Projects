@@ -11,6 +11,8 @@ Hello there visitor.
 
 * This repository is most useful for someone who wants to evaluate my way/style of writing codes for a recruitment
 
-* Very soon, I will adding codes for few more of my pet projects
+* Very soon, I will be adding codes for some of my pet projects 
+
+* You would also like to checkout my Rpubs profile: https://rpubs.com/vermaph
 
 * I consider my Data Mining codes to be more organized which are also the latest ones
