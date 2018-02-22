@@ -3,14 +3,12 @@
 
 Hello there visitor.
 
-* This is my repository for all the assignments and homeworks submitted towards my degree "Business Analytics" from University of Cincinnati for the academic session 2017 - 18. This is still a work in progress and also doesn't contain all of them as some got lost here and there
+* This is my repository for all the work I have coded in R (upcoming Python) in last 1 year. It includes assignment submissions for different courses I have undertaken towards my degree "Master of Science - Business Analytics"
 
-* This repository is most useful for someone who wants to evaluate my way/style of writing codes for a recruitment
+* This repository is most useful for a recruiter who wants to evaluate my way/style of writing codes 
 
-* You would also like to checkout my Rpubs profile: https://rpubs.com/vermaph
-
-* The different submissions have been put under folders for different subjects
+* You would also like to checkout my Rpubs profile: https://rpubs.com/vermaph & Tableau public profile: https://public.tableau.com/profile/piyush.verma#!/
 
 * Very soon, I will be adding codes for some of my pet projects 
 
-* All the submission codes are written in R
+Have a great day !!
