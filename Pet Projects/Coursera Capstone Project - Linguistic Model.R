@@ -12,6 +12,7 @@ library(tm)
 library(RWeka)
 library(wordcloud)
 library(knitr)
+library(caTools)
 #+++++++++++++++++++++++++#
 
 ## QUiz 1
@@ -76,16 +77,27 @@ print(
 }
 
 
-#++++++++ Word Cloud
+#++++++++ Merging all files, taking 10% of the all bulk and cleaning appropriately 
+set.seed(12396911)
 all.data<-NULL
 for(i in 1:3){
 all.data<-append(all.data,readLines(file(files[i],open="r"))) 
 } 
-length(all.data)/10**6
-# 3.3 million lines
-sum(as.numeric(nchar(all.data))) / 10**6
-# 386.43 million words
+length(all.data)/10**6 # 3 million lines
+sum(as.numeric(nchar(all.data))) / 10**6 # 386 million words
+index<-sample.split(all.data,SplitRatio= .05, group=NULL)
+all.data.sample<-all.data[index]
 
 
+sample_corpora <- VCorpus(VectorSource(all.data.sample), readerControl = list(language="en"))
+sample_corpora <- tm_map(sample_corpora, removeNumbers)
+sample_corpora <- tm_map(sample_corpora, removePunctuation)
+sample_corpora <- tm_map(sample_corpora, removeWords, c(stopwords('english')))
+sample_corpora <- tm_map(sample_corpora, stripWhitespace)
+sample_corpora <- tm_map(sample_corpora, content_transformer(tolower))
+sample_corpora <- tm_map(sample_corpora, removeWords, badWordsList)
+sample_corpora <- tm_map(sample_corpora, stemDocument, language='english')
+sample_corpora <- tm_map(sample_corpora, PlainTextDocument)
+sample_corpora <- tm_map(sample_corpora, content_transformer(function(x) iconv(x, "latin1", "ASCII", sub=" ")))
 
-all.data.corpora <- VCorpus(VectorSource(all.data), readerControl = list(language="en"))
+
