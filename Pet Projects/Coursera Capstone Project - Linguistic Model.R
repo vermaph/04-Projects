@@ -13,6 +13,7 @@ library(RWeka)
 library(wordcloud)
 library(knitr)
 library(caTools)
+library(googleVis)
 #+++++++++++++++++++++++++#
 
 ## QUiz 1
@@ -46,6 +47,7 @@ dt<-data.frame(cbind(file=files,
 kable(dt)
 con<-file("en_US.twitter.txt", open = "r")
 twitter<-suppressWarnings(readLines(con))
+close(con)
 
 k<-length(grep("love",twitter))/length(grep("hate",twitter))   # counts the lines where love/hate occur in twitter file
 k
@@ -56,9 +58,9 @@ length(grep("A computer once beat me at chess, but it was no match for me at kic
 
 ## QUiz 2
 
-#++++++++++++++++++++++++++++++++++++++++ Looking into words per line +++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++++ Looking into words per line +++++++++++++++++++++++++++++++++++++++++++
 
-#++++++++ Historgrams
+#+++++++ Histograms  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 for(i in 1:3){
 word_counts<-lapply(suppressWarnings(readLines(file(files[i],open="r"))),nchar) # counts words in each line
 if(i==1)
@@ -75,9 +77,20 @@ print(
   +ylab("Word frequency")+xlab("words per line")+ggtitle(title)+theme(plot.title = element_text(hjust=0.5))
   )
 }
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-#++++++++ Merging all files, taking 10% of all bulk for making a training set i nnext steps and cleaning appropriately 
+
+
+#+++++++ Profanity File  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+profanityWords <- read.table("./profanity_filter.txt", header = FALSE)
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+#+++++++ All files ++++++++++++++++++++++++++++++++++++++++++++++
+#Merging all files, taking 10% of all bulk for making a training set in next steps and cleaning appropriately 
 set.seed(12396911)
 all.data<-NULL
 for(i in 1:3){
@@ -85,19 +98,127 @@ all.data<-append(all.data,readLines(file(files[i],open="r"))) # all.data is a ch
 } 
 length(all.data)/10**6 # 3 million lines
 sum(as.numeric(nchar(all.data))) / 10**6 # 386 million words
-index<-sample.split(all.data,SplitRatio= .05, group=NULL)
+index<-sample.split(all.data,SplitRatio= .001, group=NULL)
 all.data.sample<-all.data[index]
+all_corpora <- VCorpus(VectorSource(all.data.sample), readerControl = list(language="en"))
+all_corpora <- tm_map(all_corpora, removeNumbers)
+all_corpora <- tm_map(all_corpora, removePunctuation)
+all_corpora <- tm_map(all_corpora, removeWords, c(stopwords('english')))
+all_corpora <- tm_map(all_corpora, stripWhitespace)
+all_corpora <- tm_map(all_corpora, content_transformer(tolower))
+all_corpora <- tm_map(all_corpora, removeWords, profanityWords$V1) #Profanity Filter
+all_corpora <- tm_map(all_corpora, stemDocument, language='english')
+all_corpora <- tm_map(all_corpora, PlainTextDocument)
+all_corpora <- tm_map(all_corpora, content_transformer(function(x) iconv(x, "latin1", "ASCII", sub=" ")))
+all_corpora <- tm_map(all_corpora, content_transformer(removeMostPunctuation))
+tdm <- TermDocumentMatrix(all_corpora)
+m <- as.matrix(tdm)
+freq <- sort(rowSums(m), decreasing = TRUE)
+wordcloud(words = names(freq), freq = freq, min.freq = 2, random.order = FALSE,col=terrain.colors(20), scale=c(8,.2), max.words=300, rot.per=.15)
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-sample_corpora <- VCorpus(VectorSource(all.data.sample), readerControl = list(language="en"))
-sample_corpora <- tm_map(sample_corpora, removeNumbers)
-sample_corpora <- tm_map(sample_corpora, removePunctuation)
-sample_corpora <- tm_map(sample_corpora, removeWords, c(stopwords('english')))
-sample_corpora <- tm_map(sample_corpora, stripWhitespace)
-sample_corpora <- tm_map(sample_corpora, content_transformer(tolower))
-#sample_corpora <- tm_map(sample_corpora, removeWords, badWordsList)
-sample_corpora <- tm_map(sample_corpora, stemDocument, language='english')
-sample_corpora <- tm_map(sample_corpora, PlainTextDocument)
-sample_corpora <- tm_map(sample_corpora, content_transformer(function(x) iconv(x, "latin1", "ASCII", sub=" ")))
 
 
+#+++++++ WordCloud Blogs: START ++++++++++++++++++++++++++++++++++++++++++++++
+set.seed(12396911)
+blogsEN<-NULL
+blogsEN<-append(blogsEN,suppressWarnings(readLines(file(files[1],open="r")))) # all.data is a character vector
+index<-sample.split(blogsEN,SplitRatio= .001, group=NULL)
+blogsEN.sample<-blogsEN[index]
+blog_corpora <- VCorpus(VectorSource(blogsEN.sample), readerControl = list(language="en"))
+blog_corpora <- tm_map(blog_corpora, removeNumbers)
+blog_corpora <- tm_map(blog_corpora, removePunctuation)
+blog_corpora <- tm_map(blog_corpora, removeWords, c(stopwords('english')))
+blog_corpora <- tm_map(blog_corpora, stripWhitespace)
+blog_corpora <- tm_map(blog_corpora, content_transformer(tolower))
+blog_corpora <- tm_map(blog_corpora, removeWords, profanityWords$V1)  #Profanity Filter
+blog_corpora <- tm_map(blog_corpora, stemDocument, language='english')
+blog_corpora <- tm_map(blog_corpora, PlainTextDocument)
+blog_corpora <- tm_map(blog_corpora, content_transformer(function(x) iconv(x, "latin1", "ASCII", sub=" ")))
+tdm <- TermDocumentMatrix(blog_corpora)
+m <- as.matrix(tdm)
+freq <- sort(rowSums(m), decreasing = TRUE)
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "Blogs", col = "blue", cex = 1.5)
+wordcloud(words = names(freq), freq = freq, min.freq = 2, random.order = FALSE,col=terrain.colors(20), scale=c(8,.2), max.words=300, rot.per=.15)
+#+++++++ WordCloud Blogs: END ++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+#+++++++ WordCloud News: START ++++++++++++++++++++++++++++++++++++++++++++++
+set.seed(12396911)
+newsEN<-NULL
+newsEN<-append(newsEN,suppressWarnings(readLines(file(files[2],open="r")))) # all.data is a character vector
+index<-sample.split(newsEN,SplitRatio= .001, group=NULL)
+newsEN.sample<-newsEN[index]
+news_corpora <- VCorpus(VectorSource(newsEN.sample), readerControl = list(language="en"))
+news_corpora <- tm_map(news_corpora, removeNumbers)
+news_corpora <- tm_map(news_corpora, removePunctuation)
+news_corpora <- tm_map(news_corpora, removeWords, c(stopwords('english')))
+news_corpora <- tm_map(news_corpora, stripWhitespace)
+news_corpora <- tm_map(news_corpora, content_transformer(tolower))
+news_corpora <- tm_map(news_corpora, removeWords, profanityWords$V1)  #Profanity Filter
+news_corpora <- tm_map(news_corpora, stemDocument, language='english')
+news_corpora <- tm_map(news_corpora, PlainTextDocument)
+news_corpora <- tm_map(news_corpora, content_transformer(function(x) iconv(x, "latin1", "ASCII", sub=" ")))
+tdm <- TermDocumentMatrix(news_corpora)
+m <- as.matrix(tdm)
+freq <- sort(rowSums(m), decreasing = TRUE)
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "News", col = "blue", cex = 1.5)
+wordcloud(words = names(freq), freq = freq, min.freq = 2, random.order = FALSE,col=terrain.colors(20), scale=c(8,.2), max.words=300, rot.per=.15)
+#+++++++ WordCloud News: END ++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+#+++++++ WordCloud Twitter: START ++++++++++++++++++++++++++++++++++++++++++++++
+set.seed(12396911)
+twitterEN<-NULL
+twitterEN<-append(twitterEN,suppressWarnings(readLines(file(files[3],open="r")))) # all.data is a character vector
+index<-sample.split(twitterEN,SplitRatio= .001, group=NULL)
+twitterEN.sample<-newsEN[index]
+twitter_corpora <- VCorpus(VectorSource(twitterEN.sample), readerControl = list(language="en"))
+twitter_corpora <- tm_map(twitter_corpora, removeNumbers)
+twitter_corpora <- tm_map(twitter_corpora, removePunctuation)
+twitter_corpora <- tm_map(twitter_corpora, removeWords, c(stopwords('english')))
+twitter_corpora <- tm_map(twitter_corpora, stripWhitespace)
+twitter_corpora <- tm_map(twitter_corpora, content_transformer(tolower))
+twitter_corpora <- tm_map(twitter_corpora, removeWords, profanityWords$V1)  #Profanity Filter
+twitter_corpora <- tm_map(twitter_corpora, stemDocument, language='english')
+twitter_corpora <- tm_map(twitter_corpora, PlainTextDocument)
+twitter_corpora <- tm_map(twitter_corpora, content_transformer(function(x) iconv(x, "latin1", "ASCII", sub=" ")))
+tdm <- TermDocumentMatrix(twitter_corpora)
+m <- as.matrix(tdm)
+freq <- sort(rowSums(m), decreasing = TRUE)
+layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+par(mar=rep(0, 4))
+plot.new()
+text(x=0.5, y=0.5, "Twitter", col = "blue", cex = 1.5)
+wordcloud(words = names(freq), freq = freq, min.freq = 2, random.order = FALSE,col=terrain.colors(20), scale=c(8,.2), max.words=300, rot.per=.15)
+#+++++++ WordCloud Twitter: END ++++++++++++++++++++++++++++++++++++++++++++++
+
+
+#+++++++ Making tokenizer function
+ngramTokenizer <- function(theCorpus, ngramCount) {
+  ngramFunction <- NGramTokenizer(theCorpus,Weka_control(min = ngramCount, max = ngramCount,delimiters = " \\r\\n\\t.,;:\"()?!"))
+  ngramFunction <- data.frame(table(ngramFunction))
+  ngramFunction <- ngramFunction[order(ngramFunction$Freq,decreasing = TRUE),][1:10,]
+  colnames(ngramFunction) <- c("String","Count")
+  ngramFunction
+}
+
+
+#++++++++++++++++++++ Making n-grams
+unigram <- ngramTokenizer(all_corpora, 1)
+bigram <- ngramTokenizer(all_corpora, 2)
+trigram <- ngramTokenizer(all_corpora, 3)
+
+
+unigram_Plot <- gvisColumnChart(unigram, "String", "Count",options=list(legend="none"))
+plot(unigram_Plot)
