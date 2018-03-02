@@ -60,7 +60,7 @@ length(grep("A computer once beat me at chess, but it was no match for me at kic
 
 #++++++++ Historgrams
 for(i in 1:3){
-word_counts<-lapply(readLines(file(files[i],open="r")),nchar) # counts words in each line
+word_counts<-lapply(suppressWarnings(readLines(file(files[i],open="r"))),nchar) # counts words in each line
 if(i==1)
   title<-"blogs"
 if(i==2)
@@ -77,11 +77,11 @@ print(
 }
 
 
-#++++++++ Merging all files, taking 10% of the all bulk and cleaning appropriately 
+#++++++++ Merging all files, taking 10% of all bulk for making a training set i nnext steps and cleaning appropriately 
 set.seed(12396911)
 all.data<-NULL
 for(i in 1:3){
-all.data<-append(all.data,readLines(file(files[i],open="r"))) 
+all.data<-append(all.data,readLines(file(files[i],open="r"))) # all.data is a character vector
 } 
 length(all.data)/10**6 # 3 million lines
 sum(as.numeric(nchar(all.data))) / 10**6 # 386 million words
@@ -95,7 +95,7 @@ sample_corpora <- tm_map(sample_corpora, removePunctuation)
 sample_corpora <- tm_map(sample_corpora, removeWords, c(stopwords('english')))
 sample_corpora <- tm_map(sample_corpora, stripWhitespace)
 sample_corpora <- tm_map(sample_corpora, content_transformer(tolower))
-sample_corpora <- tm_map(sample_corpora, removeWords, badWordsList)
+#sample_corpora <- tm_map(sample_corpora, removeWords, badWordsList)
 sample_corpora <- tm_map(sample_corpora, stemDocument, language='english')
 sample_corpora <- tm_map(sample_corpora, PlainTextDocument)
 sample_corpora <- tm_map(sample_corpora, content_transformer(function(x) iconv(x, "latin1", "ASCII", sub=" ")))
