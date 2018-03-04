@@ -50,7 +50,7 @@ index<-sample(1:all,0.005*all)
 combined_sample<-final_text_combined[index]
 
 
-# This step removes 16% of bad characters like ???
+# This step removes 16% of bad characters like
 dat2 <- unlist(strsplit(combined_sample, split=", ")) # convert string to vector of words
 dat3 <- grep("dat2", iconv(dat2, "latin1", "ASCII", sub="dat2")) # Find indices of words with non-ASCII characters
 dat4 <- dat2[-dat3] # Subset original vector of words to exclude words with non-ASCII char
@@ -123,10 +123,16 @@ r
 
 
 
+## Combining all N-GRAMS ###############################################################################
+combined_sample<-data.frame(rbind(unigram,bigram,trigram))
+########################################################################################################
+
+
+
 ## Prediction ##########################################################################################
 test<-"love"
 test<-removeNumbers(removePunctuation(tolower(test)))
-matches<-all[grep(test,all$Word_1),]
+matches<-combined_sample[grep(test,combined_sample$Word_1),]
 matches<-matches[order(matches$Freq,decreasing = TRUE),]
 matches<-head(matches[,1],6)
 ########################################################################################################
