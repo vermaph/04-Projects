@@ -1,10 +1,12 @@
-#########################################################
-#                                                       #
-#                                                       #
-#                                                       #
-#                                                       #
-#                                                       #
-#########################################################
+####################################################################
+# Track: Data Science Specialization                               #
+# Course: Data Science Capstone                                    #
+# University: John Hopkins                                         #
+# Topic: Building a Text-Predicting R-Shiny App using Text Mining  #                                                    #
+#                                                                  #
+# Author: Piyush Verma                                             #
+# Start Date: 02/22/2018                                           #
+####################################################################
 
 
 
@@ -15,7 +17,6 @@ library(stringi)
 library(RWeka)
 library(ggplot2)
 #################
-
 
 
 
@@ -39,7 +40,6 @@ kable(tab[order(tab$Total_Lines,decreasing = TRUE),]) # Output high level info f
 
 
 
-
 ############################### Cleaning text files ###################################################
 final_text_combined<-NULL
 for(i in 1:3){
@@ -50,19 +50,17 @@ index<-sample(1:all,0.005*all)
 combined_sample<-final_text_combined[index]
 
 
-# This step removes 16% of bad characters like 
+# This step removes 16% of bad characters like ???
 dat2 <- unlist(strsplit(combined_sample, split=", ")) # convert string to vector of words
 dat3 <- grep("dat2", iconv(dat2, "latin1", "ASCII", sub="dat2")) # Find indices of words with non-ASCII characters
 dat4 <- dat2[-dat3] # Subset original vector of words to exclude words with non-ASCII char
 combined_sample <- paste(dat4, collapse = ", ") # Convert vector back to a string, 
 
 
-
 profanityWords<-read.table("./profanity_filter.txt", header = FALSE)
 removeURL<-function(x) gsub("http[[:alnum:]]*", "", x)
 mystopwords <- c("[I]","[Aa]nd", "[Ff]or","[Ii]n","[Ii]s","[Ii]t","[Nn]ot","[Oo]n","[Tt]he","[Tt]o")
 ########################################################################################################
-
 
 
 
@@ -82,6 +80,8 @@ EN_corpora<-tm_map(EN_corpora, content_transformer(removeURL))
 EN_corpora<-tm_map(EN_corpora, stemDocument, language='english')
 EN_corpora<-tm_map(EN_corpora, stripWhitespace)
 EN_corpora<-tm_map(EN_corpora, PlainTextDocument)
+########################################################################################################
+
 
 
 ############################ Word Frequnecy Barplots ###################################################
@@ -90,11 +90,11 @@ unigram<-data.frame(table(unigram))
 unigram<-unigram[order(unigram$Freq,decreasing = TRUE),]
 names(unigram)<-c("Word_1", "Freq")
 unigram$Word_1<-as.character(unigram$Word_1)
-g<-ggplot(data=unigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq))
-g<-g + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
-g<-g + geom_text(data = unigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
-g<-g + labs(x="Frequency",y="Words")
-g
+p<-ggplot(data=unigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
+p<-p + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+p<-p + geom_text(data = unigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+p<-p + labs(x="Frequency",y="Words")
+p
 
 
 bigram<-NGramTokenizer(EN_corpora, Weka_control(min = 2, max = 2,delimiters = " \\r\\n\\t.,;:\"()?!"))
@@ -102,24 +102,37 @@ bigram<-data.frame(table(bigram))
 bigram<-bigram[order(bigram$Freq,decreasing = TRUE),]
 names(bigram)<-c("Word_1", "Freq")
 bigram$Word_1<-as.character(bigram$Word_1)
-p<-ggplot(data=bigram[1:5,], aes(x = Word_1,Freq, y = Freq))
-p<-p + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
-p<-p + geom_text(data = unigram[1:5,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
-p<-p + labs(x="Frequency",y="Words")
-p
+q<-ggplot(data=bigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
+q<-q + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+q<-q + geom_text(data = bigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+q<-q + labs(x="Frequency",y="Words")
+q
 
 
-unigram<-NGramTokenizer(EN_corpora, Weka_control(min = 1, max = 1,delimiters = " \\r\\n\\t.,;:\"()?!"))
-unigram<-data.frame(table(unigram))
-unigram<-unigram[order(unigram$Freq,decreasing = TRUE),]
-names(unigram)<-c("Word_1", "Freq")
-unigram$Word_1<-as.character(unigram$Word_1)
-g<-ggplot(data=unigram[1:15,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
-g<-g + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
-g<-g + geom_text(data = unigram[1:15,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
-g<-g + labs(x="Frequency",y="Words")
-g
+trigram<-NGramTokenizer(EN_corpora, Weka_control(min = 3, max = 3,delimiters = " \\r\\n\\t.,;:\"()?!"))
+trigram<-data.frame(table(trigram))
+trigram<-trigram[order(trigram$Freq,decreasing = TRUE),]
+names(trigram)<-c("Word_1", "Freq")
+trigram$Word_1<-as.character(trigram$Word_1)
+r<-ggplot(data=trigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
+r<-r + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+r<-r + geom_text(data = trigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+r<-r + labs(x="Frequency",y="Words")
+r
 ########################################################################################################
+
+
+
+## Prediction ##########################################################################################
+test<-"love"
+test<-removeNumbers(removePunctuation(tolower(test)))
+matches<-all[grep(test,all$Word_1),]
+matches<-matches[order(matches$Freq,decreasing = TRUE),]
+matches<-head(matches[,1],6)
+########################################################################################################
+
+
+
 
 
 
