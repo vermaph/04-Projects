@@ -46,7 +46,7 @@ for(i in 1:3){
   final_text_combined<-append(final_text_combined,suppressWarnings(readLines(file(files[i],open="r"))))
 }
 all<-length(final_text_combined)
-index<-sample(1:all,0.001*all)
+index<-sample(1:all,0.005*all)
 combined_sample<-final_text_combined[index]
 
 
@@ -60,6 +60,7 @@ combined_sample <- paste(dat4, collapse = ", ") # Convert vector back to a strin
 
 profanityWords<-read.table("./profanity_filter.txt", header = FALSE)
 removeURL<-function(x) gsub("http[[:alnum:]]*", "", x)
+mystopwords <- c("[I]","[Aa]nd", "[Ff]or","[Ii]n","[Ii]s","[Ii]t","[Nn]ot","[Oo]n","[Tt]he","[Tt]o")
 ########################################################################################################
 
 
@@ -71,6 +72,7 @@ EN_corpora<-Corpus(VectorSource(combined_sample), readerControl = list(language=
 EN_corpora<-tm_map(EN_corpora, removeWords, stopwords('en'))
 EN_corpora<-tm_map(EN_corpora, removeWords, stopwords('SMART'))
 EN_corpora<-tm_map(EN_corpora, removeWords, stopwords('german'))
+EN_corpora<-tm_map(EN_corpora, removeWords, mystopwords)
 EN_corpora<-tm_map(EN_corpora, content_transformer(function(x) iconv(x, to="UTF-8", sub="byte")))
 EN_corpora<-tm_map(EN_corpora, content_transformer(tolower))
 EN_corpora<-tm_map(EN_corpora, content_transformer(removePunctuation), preserve_intra_word_dashes=TRUE)
@@ -88,9 +90,38 @@ unigram<-data.frame(table(unigram))
 unigram<-unigram[order(unigram$Freq,decreasing = TRUE),]
 names(unigram)<-c("Word_1", "Freq")
 unigram$Word_1<-as.character(unigram$Word_1)
-g<-ggplot(data=unigram[1:15,], aes(x = reorder(Word_1,Freq), y = Freq))
+g<-ggplot(data=unigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq))
+g<-g + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+g<-g + geom_text(data = unigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+g<-g + labs(x="Frequency",y="Words")
+g
+
+
+bigram<-NGramTokenizer(EN_corpora, Weka_control(min = 2, max = 2,delimiters = " \\r\\n\\t.,;:\"()?!"))
+bigram<-data.frame(table(bigram))
+bigram<-bigram[order(bigram$Freq,decreasing = TRUE),]
+names(bigram)<-c("Word_1", "Freq")
+bigram$Word_1<-as.character(bigram$Word_1)
+p<-ggplot(data=bigram[1:5,], aes(x = Word_1,Freq, y = Freq))
+p<-p + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+p<-p + geom_text(data = unigram[1:5,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+p<-p + labs(x="Frequency",y="Words")
+p
+
+
+unigram<-NGramTokenizer(EN_corpora, Weka_control(min = 1, max = 1,delimiters = " \\r\\n\\t.,;:\"()?!"))
+unigram<-data.frame(table(unigram))
+unigram<-unigram[order(unigram$Freq,decreasing = TRUE),]
+names(unigram)<-c("Word_1", "Freq")
+unigram$Word_1<-as.character(unigram$Word_1)
+g<-ggplot(data=unigram[1:15,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
 g<-g + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
 g<-g + geom_text(data = unigram[1:15,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
 g<-g + labs(x="Frequency",y="Words")
 g
 ########################################################################################################
+
+
+
+
+
