@@ -125,6 +125,9 @@ r
 
 ## Combining all N-GRAMS ###############################################################################
 combined_sample<-data.frame(rbind(unigram,bigram,trigram))
+write.csv(combined_sample,"C:/0000/05 Github/R-Codes/R-codes/Pet Projects/Text Mining - Word Prediction/Text_Prediction/Ngram_data.csv",row.names = FALSE)
+combined_sample<-read.csv("C:/0000/05 Github/R-Codes/R-codes/Pet Projects/Text Mining - Word Prediction/Text_Prediction/Ngram_data.csv",stringsAsFactors = F)
+saveRDS(combined_sample,"C:/0000/05 Github/R-Codes/R-codes/Pet Projects/Text Mining - Word Prediction/Text_Prediction/Ngram_data.RData")
 ########################################################################################################
 
 

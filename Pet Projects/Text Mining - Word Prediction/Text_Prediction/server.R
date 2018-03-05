@@ -1,26 +1,30 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
+suppressWarnings(library(stringr))
+suppressWarnings(library(shiny))
 
-library(shiny)
 
-# Define server logic required to draw a histogram
-shinyServer(function(input, output) {
-   
-  output$distPlot <- renderPlot({
-    
-    # generate bins based on input$bins from ui.R
-    x    <- faithful[, 2] 
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
-    
-    # draw the histogram with the specified number of bins
-    hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    
-  })
-  
+ngram <- readRDS("C:/0000/05 Github/R-Codes/R-codes/Pet Projects/Text Mining - Word Prediction/Text_Prediction/Ngram_data.RData")
+
+Predict<-function(x){
+  test<-removeNumbers(removePunctuation(tolower(x)))
+
+  matches<-ngram[grep(test,ngram$Word_1),]
+  matches<-matches[order(matches$Freq,decreasing = TRUE),]
+  matches<-head(matches[,1],1)
+  matches
+}
+
+shinyServer(function(input, output) 
+{
+# Generating the user input  
+output$original<-renderText({
+      output_original<-input$incoming
+      return(output_original)
 })
+# Generating the prediction
+output$prediction<-renderText({
+  output_prediction<-Predict(input$incoming)
+  return(output_prediction)
+})
+
+}
+)
