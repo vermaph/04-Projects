@@ -1,0 +1,13 @@
+name: Text_Prediction
+title: Text_Prediction
+username:
+account: vermaph
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 294585
+bundleId: 1257570
+url: https://vermaph.shinyapps.io/Text_Prediction/
+when: 1520452192.86397
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: bigram.csv|data_spec.jpg|en_US.blogs.txt|en_US.news.txt|en_US.twitter.txt|Ngram_data.csv|Ngram_data.RData|profanity_filter.txt|trigram.csv|unigram.csv
