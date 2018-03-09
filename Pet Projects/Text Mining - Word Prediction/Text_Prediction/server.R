@@ -1,5 +1,13 @@
 ## R Shiny App Location: https://vermaph.shinyapps.io/Text_Prediction/
 
+## POSSIBILITIES FOR IMPROVEMENTS
+# 1. Word Networks 
+# 2. Disadvantages: Curse dimensionality, computationally inefficient
+# 3. Word association
+# 4. prediction for misspellings
+# 5. 
+
+
 library(tm)
 library(knitr)
 library(stringi)
