@@ -1,0 +1,82 @@
+---
+title: "World coal consumption 1980-2009"
+author: "Piyush Verma"
+date: "December 28, 2017"
+output: html_document
+---
+
+# {.tabset}
+
+# Introduction
+
+Fossil fuels are one of the major sources for energy all over the world. For a long time, thermal power stations , using steam produced by burning coal, has been at the centre of power generation. More importantly while the western countries very recently have started focussing on clean sources (like nuclear and hydroelectric), their  developing countries specially China are still relying heavily on coal production, for either for their power generation or steel production (which requires tonnes of coal to extract pig iron from iron ores in blast furnace). The data was downlaoded from [here](https://catalog.data.gov/dataset/annual-coal-consumption-by-country): 
+
+
+![(Think: This and many more around the world are 24 X 7 releasing toxic pollutants in the atmosphere)](C:\Users\piyus\Desktop\pollution thermal plant.jpg)
+
+
+# Synopsis
+
+In this analysis, we will see that, over time, western countries have reduced their coal consumption, while developing countries like China and India have been consistenly increasing hteir coal consumption, albeit at different paces. We see that Europe has almost halfed their consumption since 1980s. China is leading the pack, not so closely followed by USA. 
+
+
+# Data Processing
+
+
+```{r warning=FALSE, message=FALSE}
+library("tidyr")
+coal_consumption<-read.csv("coal_consumption.csv")
+```
+
+
+Data was not analysis ready: "X" had to be removed from the year, and values and year had to be converted to numeric. Moreover, some of the coal consumption values were negative or NA, which were assumed to be data entry issue and thus were treated as being 0.
+
+```{r warning=FALSE, message=FALSE}
+# Data Cleaning
+coal_consumption2<-gather(coal_consumption,X)
+colnames(coal_consumption2)<-c("Countries","Year","Value")
+coal_consumption2$Year<-gsub("X","",coal_consumption2$Year)
+coal_consumption2$Year<-as.numeric(coal_consumption2$Year)
+coal_consumption2$Value<-as.numeric(coal_consumption2$Value)
+
+coal_consumption2$Value<-ifelse(is.na(coal_consumption2$Value),0,coal_consumption2$Value)
+coal_consumption2$Value<-ifelse(coal_consumption2$Value<0,0,coal_consumption2$Value)
+
+coal_agg_all_years<-aggregate(coal_consumption2$Value,by=list(coal_consumption2$Countries),FUN=sum)
+```
+
+# Coal consumption trends
+```{r warning=FALSE, message=FALSE}
+# Data Visualization
+library("plotly")
+world<-coal_consumption2[coal_consumption2$Countries=="World",]
+plot_ly(world,x = ~Year,y = ~Value, type = "scatter",mode="lines") %>% layout(title="World Coal Consumption", yaxis=list(title="Consumption in Quadrillion BTU"))
+```
+
+<br/>
+From the plot above we can say that the world coal consumption skyrocketed , somewhere around 2000-2002.
+
+```{r warning=FALSE, message=FALSE}
+continents<-c("Africa","Antarctica","Asia & Oceania","Australia","Central & South America","Europe","North America")
+continents<-coal_consumption2[coal_consumption2$Countries %in% continents,]
+plot_ly(continents,x = ~Year,y = ~Value, color = ~Countries, type = "scatter",mode="lines") %>% layout(title="Consumption by continents", yaxis=list(title="Consumption in Quadrillion BTU"))
+```
+
+<br/>
+In the pot above, we narrowded down further to find that coal had been consuming faster in Asian and Oceanic region. 
+
+
+# Result
+
+
+
+```{r warning=FALSE, message=FALSE}
+countries<-c("China","United States","India","Former U.S.S.R.","Europe")
+countries<-coal_consumption2[coal_consumption2$Countries %in% countries,]
+plot_ly(countries,x = ~Year,y = ~Value, color = ~Countries, type = "scatter",mode="lines") %>% layout(title="Consumption by major countries and EU", yaxis=list(title="Consumption in Quadrillion BTU"))
+```
+
+<br/>
+This plot clearly says it all: China has been driving the world coal consumption since 2000. While among western countries, Europe as a whole has been decreasing their coal consumption (As per the statistics [here](https://blogs.thomsonreuters.com/answerson/future-coal-europe-dark-carbon-prices-take-cue/): European Union has been relying more on Oil and Natural Gas which are comparatively cleaner for atmosphere), USA still seems to be using coal and has not seen any decrease or regulation in last decade. India, another developing country, on the other hand has been increasing its coal consumption, and by 2009, it equaled the coal consumption of entire Europe, though its still very less when compared to China's coal muscle power. It was found that around 2000, in order to boost their economy China needed more electricity generation and steel production. For which, the quicker and easier way would have been setting more coal based projects. 
+
+![(Alarming situation)](C:\Users\piyus\Desktop\china polluted city.jpg)

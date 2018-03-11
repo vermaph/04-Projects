@@ -1,0 +1,38 @@
+---
+title: "Global population concentration"
+author: "Piyush Verma"
+date: "December 27, 2017"
+output: html_document
+---
+
+
+* Coastal China and Indian subcontinent region are the most densely populated areas in the world
+* Though Tokyo in Japan has the biggest population
+* North American population is majorly centred around the North-eastern United States
+* Aussies, as going by their popularity of being beach bums, live mostly on the coast (their innermost land is basically uninhabitable)
+* Regions like Sahara, Gobi desert, Greenland, Amazon forest and Siberia are scarcely inhabited.
+
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8)
+```
+
+
+```{r, message=FALSE,warning=FALSE,results='hide', echo=FALSE}
+set.seed(2017-12-27)
+library("data.table")
+cities<-fread("./worldcities.csv")
+cities<-cities[cities$pop>0,]
+```
+
+```{r, message=FALSE,warning=FALSE, echo=FALSE, width = 40, height = 30}
+library("leaflet")
+pal <- colorNumeric(palette = "Red",domain = cities$pop)
+cities2<-cbind(cities,col=pal(cities$pop))
+
+my_map <- cities2 %>% leaflet() %>% addTiles() %>% addCircles(weight = 1, radius = sqrt(cities$pop) * 110) %>% setView(lat = 51.4826, lng = 0.0077, zoom = 2) 
+my_map
+```
+
+
+
