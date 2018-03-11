@@ -1,0 +1,121 @@
+---
+html_document: default
+geometry: left=1cm,right=1cm,top=1cm,bottom=1cm
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+pdf_document: default
+---
+
+#Question: 1
+```{r, include=FALSE, echo=FALSE, eval=TRUE}
+library("xlsx")
+library("ggplot2")
+library("GGally")
+```
+```{r echo=TRUE,eval=TRUE}
+setwd("C:/0000/00 Assignments/Statistical Methods/Module-II/Homework")
+alumni<-read.xlsx("alumni.xls",sheetIndex = 1)
+colnames(alumni)[2]<-c("class_under_20")
+colnames(alumni)[3]<-c("SF_ratio")
+colnames(alumni)[4]<-c("Alum_don_rate")
+```
+```{r }
+summary(alumni)
+```
+```{r, fig.width=4,fig.height=4, fig.align='center'}
+ggpairs(alumni[,c(2,4)])
+```
+```{r, fig.width=6,fig.height=6, fig.align='center'}
+par(mfrow=c(2,2))
+boxplot(alumni$class_under_20, main = "Class under 20")
+boxplot(alumni$Alum_don_rate, main = "Alum Donation Rate")
+hist(alumni$class_under_20, main = "Class under 20")
+hist(alumni$Alum_don_rate, main = "Alum Donation Rate")
+```
+
+####Comments:
+Both the predictors and response don't have any outliers (from the boxplots above). From histograms we observe that Class under 20 is right skewed. Correlation coefficeint between alum donation rate and % of class under 20 is 0.646 Thus, Alum donation rate is positively related to Class under 20.
+
+```{r }
+fit<-lm(data = alumni,Alum_don_rate~class_under_20)
+summary(fit)
+```
+
+```{r fig.width=4,fig.height=4, fig.align='center'}
+g<-ggplot(data = alumni,aes(x=class_under_20,y=Alum_don_rate))+geom_point()
+g<-g+geom_smooth(method = "lm")+ggtitle("Alum donation rate Vs % Class under 20")
+g<-g+theme(plot.title = element_text(hjust = 0.5))
+g
+```
+
+####Comments:
+The estimated regression equation is: Y = -7.3861 + 0.6578*X
+.From the above results we can infer that if a college has more number of smaller classes (of size 20 or less), it may result into better students and faculty interactions, and thus may lead to enhanced alumni fundings in future.
+
+#Question: 2
+```{r }
+x<-round(rnorm(100,mean = 2, sd = .1),2)
+err<-round(rnorm(100,mean = 0 , sd = .25),2)
+y<-round((10+5*x+err),2)
+```
+
+```{r }
+dat<-data.frame(x=x,y=y);x_bar<-mean(x);x_bar;y_bar<-mean(y);y_bar
+```
+
+```{r }
+summary(y);summary(x)
+```
+
+```{r, fig.width=4,fig.height=4, fig.align='center'}
+par(mfrow=c(1,2))
+boxplot(y,main = "Y distribution")
+boxplot(x,main = "X distribution")
+```
+
+####Comments:
+From the boxplots above we can say that there are few outliers in both X and Y:
+The correlation coefficinet is :
+```{r }
+cor(x,y)
+```
+
+```{r ,fig.width=4,fig.height=4, fig.align='center'}
+plot(x,y,main="Scatter plot of X & Y")
+fit2<-lm(data=dat,y~x);summary(fit2)
+int<-fit2$coefficients[1]
+slope<-fit2$coefficients[2]
+```
+
+The regressed equation is:
+```{r }
+paste0("Regressed equation: Y = ",round(int,2)," + ",round(slope,2),"X")
+```
+The estimated coefficeints are:
+```{r }
+fit2$coefficients[1]
+fit2$coefficients[2]
+```
+
+The mean squared error is:
+```{r }
+mean(fit2$residuals^2)
+```
+
+The sample mean of x and y are:
+```{r }
+x_bar
+y_bar
+```
+
+```{r ,fig.width=4,fig.height=4, fig.align='center'}
+g<-ggplot(data=dat,aes(x=x,y=y))+geom_point()+geom_smooth(method="lm")
+g<-g+geom_point()+geom_point(aes(x=x_bar,y=y_bar),colour = "red",size=6,pch=19)
+g<-g+ggtitle("Y vs X: Fitted line and mean_points")+geom_smooth(method = "lm")
+g<-g+theme(plot.title = element_text(hjust = 0.5))
+g
+```
+
+From the fitted regressed line in the scatter plot of X & Y we can say that it is passing through the mean of the sample (highlighted as red)

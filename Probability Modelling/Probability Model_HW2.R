@@ -1,0 +1,54 @@
+library("ggplot2")
+#############################Solution 18#############################
+
+#(a)
+#Given: X~N(3,16) 
+#To solve: P(X<7)
+x<-seq(-12,18,length = 1000)
+y<-dnorm(x,mean=3,sd=sqrt(16))
+dat<-data.frame(x,y)
+g<-ggplot(data=dat,aes(x=x,y=y))+geom_line()+ggtitle("Normal Distribution")+theme(plot.title = element_text(hjust = 0.5))
+g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks = c(-12,-9,-6,-3,0,3,6,7,9,12))+geom_vline(xintercept = 7)
+g<-g+geom_ribbon(data = dat[dat$x<7,],aes(x=x,ymax=y),ymin=0,fill="red", alpha=0.5)
+g
+pnorm((7-3)/(4),lower.tail = TRUE)
+
+
+#(b)
+#To solve: P(X>-2)
+g<-ggplot(data=dat,aes(x=x,y=y))+geom_line()+ggtitle("Normal Distribution")+theme(plot.title = element_text(hjust = 0.5))
+g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks = c(-12,-9,-6,-3,-2,0,3,6,9,12))+geom_vline(xintercept = -2)
+g<-g+geom_ribbon(data = dat[dat$x>-2,],aes(x=x,ymax=y),ymin=0,fill="blue", alpha=0.5)
+g
+#P(X>-2) = 1-P(X<=-2)
+1-pnorm((-2-3)/(4),lower.tail = TRUE)
+
+
+#(c)P(X>x)=0.05
+xx=qnorm(0.05,mean = 3,sd = 4,lower.tail = FALSE)
+g<-ggplot(data=dat,aes(x=x,y=y))+geom_line()+ggtitle("Normal Distribution")+theme(plot.title = element_text(hjust = 0.5))
+g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks = c(-12,-9,-6,-3,0,3,6,round(xx,2),12))+geom_vline(xintercept = xx)
+g<-g+geom_ribbon(data = dat[dat$x>xx,],aes(x=x,ymax=y),ymin=0,fill="orange", alpha=0.5)
+g
+
+#(d)P(0<=x<4)
+pnorm((4-3)/(4),lower.tail = TRUE)-pnorm((0-3)/(4),lower.tail = TRUE)
+xx=c(0,4)
+g<-ggplot(data=dat,aes(x=x,y=y))+geom_line()+ggtitle("Normal Distribution")+theme(plot.title = element_text(hjust = 0.5))
+g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks = c(-12,-9,-6,-3,0,3,6,round(xx,2),12))+geom_vline(xintercept = xx)
+g<-g+geom_ribbon(data = dat[dat$x>0 & dat$x<4,],aes(x=x,ymax=y),ymin=0,fill="purple", alpha=0.5)
+g
+
+#(e)P(|X|>|x|) = 0.05
+x_neg<-qnorm(0.05,mean = 3,sd = 4)
+X_pos<-qnorm(0.05,mean = 3,sd = 4,lower.tail = FALSE)
+xx<-round(c(x_neg,X_pos),2)
+dat_red1<-dat[dat$x>X_pos,]
+dat_red2<-dat[dat$x<x_neg,]
+dat_red<-rbind(dat_red1,dat_red2)
+g<-ggplot(data=dat,aes(x=x,y=y))+geom_line()+ggtitle("Normal Distribution")+theme(plot.title = element_text(hjust = 0.5))
+g<-g+xlab("X")+ylab("pmf(x)")+scale_x_continuous(breaks = c(-12,-9,-6,xx,0,3,6,12))+geom_vline(xintercept = xx)
+g<-g+geom_ribbon(data = dat_red1,aes(x=x,ymax=y),ymin=0,fill="brown", alpha=0.5)
+g<-g+geom_ribbon(data = dat_red2,aes(x=x,ymax=y),ymin=0,fill="brown", alpha=0.5)
+g
+
