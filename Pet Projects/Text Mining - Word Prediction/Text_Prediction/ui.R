@@ -5,14 +5,25 @@ library(shinythemes)
 shinyUI(fluidPage(theme = shinytheme("superhero")   # Giving Shiny a theme
                   ,
                   fluidRow(br()
+
+                           ,
+                           column(8, align="left", offset = 2
+                                  ,
+                                  br()
+                                  ,
+                                  tags$style(type="text/css", "#string { height: 50px; width: 100%; text-align:center; font-size: 30px; display: block;}")
+                                  ,
+                                  textOutput("text3")
+                           ) 
+                  )  # End of 1st fluidRow
+                  ,
+                  fluidRow(br()
                            ,
                            br()
                            ,
                            column(8, align="center", offset = 2
                                    ,
                                    titlePanel("Data Science Specialization Capstone Project: Predict the next word")
-                                   ,
-                                   br()
                                    ,
                                    br()
                                    ,
@@ -45,7 +56,6 @@ shinyUI(fluidPage(theme = shinytheme("superhero")   # Giving Shiny a theme
                                  ,
                                  tags$style(type="text/css", "#string { height: 50px; width: 100%; text-align:center; font-size: 30px; display: block;}")
                                  ,
-                                 br(),br(),br(),
                                  h3("My LinkedIn !", a("Piyush Verma", href="https://www.linkedin.com/in/vermaph/"))
                                  ,
                                  h3("Github location !", a("Predict the next word R code", href="https://github.com/grammilo/R-codes/tree/master/Pet%20Projects/Text%20Mining%20-%20Word%20Prediction/Text_Prediction"))
