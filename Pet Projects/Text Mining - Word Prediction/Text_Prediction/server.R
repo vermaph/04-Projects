@@ -1,13 +1,5 @@
 ## R Shiny App Location: https://vermaph.shinyapps.io/Text_Prediction/
 
-## POSSIBILITIES FOR IMPROVEMENTS
-# 1. Word Networks 
-# 2. Disadvantages: Curse dimensionality, computationally inefficient
-# 3. Word association
-# 4. prediction for misspellings
-# 5. 
-
-
 library(tm)
 library(knitr)
 library(stringi)
@@ -75,5 +67,8 @@ shinyServer(function(input, output) {
   
   output$text1 <- renderText({
     input$incoming});
+  
+  output$text3 <- renderText({
+    paste("This app can be used as a POC to build more evolved products. For example, a customer types spicy and the app should produce the recipes for all the spicy cuisines filtered according to the customer's historic orders (European-Asian-Mediterranean etc). Or it can be used to predict a service complain even before a customer completes typing his complaint: possibly cutting down the critical customer service time")});
 }
 )
