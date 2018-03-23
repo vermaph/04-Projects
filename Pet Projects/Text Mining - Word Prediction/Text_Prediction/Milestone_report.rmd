@@ -1,0 +1,159 @@
+---
+title: "Milestone Report: Coursera Data Science Capstone Project"
+author: "Piyush Verma"
+date: "March 17, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Executive Summary
+
+
+This is one step towards building a basic text predictive model. The dataset used here has been downloaded from [here](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip). The dataset is provided by a company called swiftkey in partnership with Coursera. The dataset was made by taking words from users' tweets, blogs and words from the news articles. The provided dataset is structured but requires basic cleaning which is discussed in later section. Following are the files:
+
+* en_US.blogs.txt   : words scraped from blogs
+* en_US.news.txt    : words scraped from news articles
+* en_US.twitter.txt : words scraped from twitter
+
+Though the end objective for the project is to build an interactive R shiny app that can take a string of words and predict the next word, but before reaching to that point, we will be spending some time exploring the most frequent unigram, bigram, trigram and quadgram words and develop some understanding.
+
+```{r message=F, warning=F}
+## Necessary libraries
+suppressWarnings(library(tm))
+suppressWarnings(library(knitr))
+suppressWarnings(library(stringi))
+suppressWarnings(library(RWeka))
+suppressWarnings(library(ggplot2))
+```
+
+## Data Reading
+
+
+Code below reads the twitter, news and blogs file line by line, and counts the: a) total number of lines, b) total number of words and the maximum words in a line for that text file. 
+
+```{r message=F, warning=F}
+## Reading files
+t_line<-c()
+t_words<-c()
+max_words<-c()
+
+files<-list.files(pattern = "en_US.")
+    for(i in 1:3){
+        con<-file(files[i],open = "r")
+        text<-suppressWarnings(readLines(con))
+        t_line[i]<-length(text) # Counting total number of lines
+        t_words[i]<-sum(stri_count_words(text)) # Counting total number of words  
+        max_words[i]<-max(stri_count_words(text)) # Counting max number of words in 1 line
+      close(con)
+    }
+tab<-data.frame(Files = files[1:3], Total_Lines = t_line, Total_Words = t_words, Max_Word = max_words)
+kable(tab[order(tab$Total_Lines,decreasing = TRUE),]) # Output high level info for all the files
+```
+
+
+## Data Understanding
+
+
+From the table, we can see that the twitter file have at par number of lines than other 2 files. Both twitter and blogs have at par number of words than news. That means down the analysis, we would be working with a majority of words coming from tweets and blogs. Since these are the online channels mostly independent and less polished than news articles, we will be expecting spelling mistakes and some form of cleaning would need to be done. Moreover, blogs have the largest amount of words. But look at the very small number of words per line in twitter file. That's because the length of a tweet is limited. 
+
+Code below, generates training and testing dataset. Since the complete combined text would be enourmous (71 million), we would take 0.5% of it to build a training dataset which would be roughly 350,000 words. We hope these many words should cover majority of commonly used words which a potential user can use in the app and look for a prediction. 
+
+```{r message=F, warning=F}
+## Cleaning text files
+final_text_combined<-NULL
+    for(i in 1:3){
+      final_text_combined<-append(final_text_combined,suppressWarnings(readLines(file(files[i],open="r"))))
+    }
+all<-length(final_text_combined)
+index<-sample(1:all,0.005*all)
+combined_sample<-final_text_combined[index]
+```
+
+## Data Cleaning
+
+We expect latin words, special characters like chinese symbols, punctuations, numbers and profanity words to flow into our sample dataset. And we don't want to use them to build our model. So in steps below we will be removing them using the "tm" package.
+
+```{r message=F, warning=F}
+## This step removes 16% of bad characters like
+dat2 <- unlist(strsplit(combined_sample, split=", ")) # convert string to vector of words
+dat3 <- grep("dat2", iconv(dat2, "latin1", "ASCII", sub="dat2")) # Find indices of words with non-ASCII characters
+dat4 <- dat2[-dat3] # Subset original vector of words to exclude words with non-ASCII char
+combined_sample <- paste(dat4, collapse = ", ") # Convert vector back to a string, 
+
+
+profanityWords<-read.table("./profanity_filter.txt", header = FALSE)
+removeURL<-function(x) gsub("http[[:alnum:]]*", "", x)
+#mystopwords <- c("[I]","[Aa]nd", "[Ff]or","[Ii]n","[Ii]s","[Ii]t","[Nn]ot","[Oo]n","[Tt]he","[Tt]o")
+
+## Corpora Preparation
+EN_corpora<-VCorpus(VectorSource(combined_sample), readerControl = list(language="en"))
+
+EN_corpora<-tm_map(EN_corpora, removeWords, stopwords('english'))
+#EN_corpora<-tm_map(EN_corpora, removeWords, stopwords('SMART'))
+#EN_corpora<-tm_map(EN_corpora, removeWords, stopwords('german'))
+#EN_corpora<-tm_map(EN_corpora, removeWords, mystopwords)
+EN_corpora<-tm_map(EN_corpora, content_transformer(function(x) iconv(x, to="UTF-8", sub="byte")))
+EN_corpora<-tm_map(EN_corpora, content_transformer(tolower))
+EN_corpora<-tm_map(EN_corpora, content_transformer(removePunctuation), preserve_intra_word_dashes=TRUE)
+EN_corpora<-tm_map(EN_corpora, removeWords, profanityWords$V1) #Profanity Filter
+EN_corpora<-tm_map(EN_corpora, content_transformer(removeNumbers))
+EN_corpora<-tm_map(EN_corpora, content_transformer(removeURL))
+#EN_corpora<-tm_map(EN_corpora, stemDocument, language='english')
+EN_corpora<-tm_map(EN_corpora, stripWhitespace)
+EN_corpora<-tm_map(EN_corpora, PlainTextDocument)
+```
+
+## Data Exploration
+
+
+Now, since the Corpora has been made and is ready to build a model upon, we would like to look deeper and see which are the most popualar unigram bigram, trigram and quadgram words. This step is important in the sense that by looking at the charts we can decide if we need to filter for more words, say "I", but that totally depends on the end user. If identified to be flowing in, we would go back to the cleaning step and remove these words. 
+
+Below are the codes and the charts generating them. 
+
+```{r message=F, warning=F}
+## Unigram Frequnecy Barplot
+unigram<-NGramTokenizer(EN_corpora, Weka_control(min = 1, max = 1,delimiters = " \\r\\n\\t.,;:\"()?!"))
+unigram<-data.frame(table(unigram))
+unigram<-unigram[order(unigram$Freq,decreasing = TRUE),]
+names(unigram)<-c("Word_1", "Freq")
+unigram$Word_1<-as.character(unigram$Word_1)
+p<-ggplot(data=unigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
+p<-p + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+p<-p + geom_text(data = unigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+p<-p + labs(x="Frequency",y="Words")
+p
+
+## Bigram Frequnecy Barplot
+bigram<-NGramTokenizer(EN_corpora, Weka_control(min = 2, max = 2,delimiters = " \\r\\n\\t.,;:\"()?!"))
+bigram<-data.frame(table(bigram))
+bigram<-bigram[order(bigram$Freq,decreasing = TRUE),]
+names(bigram)<-c("Word_1", "Freq")
+bigram$Word_1<-as.character(bigram$Word_1)
+q<-ggplot(data=bigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
+q<-q + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+q<-q + geom_text(data = bigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+q<-q + labs(x="Frequency",y="Words")
+q
+
+## Trigram Frequnecy Barplot
+trigram<-NGramTokenizer(EN_corpora, Weka_control(min = 3, max = 3,delimiters = " \\r\\n\\t.,;:\"()?!"))
+trigram<-data.frame(table(trigram))
+trigram<-trigram[order(trigram$Freq,decreasing = TRUE),]
+names(trigram)<-c("Word_1", "Freq")
+trigram$Word_1<-as.character(trigram$Word_1)
+r<-ggplot(data=trigram[1:10,], aes(x = reorder(Word_1,Freq), y = Freq, fill = Word_1))
+r<-r + geom_bar(stat="identity") + coord_flip() + ggtitle("Frequent Words")
+r<-r + geom_text(data = trigram[1:10,], aes(x = Word_1, y = Freq, label = Freq), hjust=-1, position = "identity")
+r<-r + labs(x="Frequency",y="Words")
+r
+```
+
+## Futher discussions on the scope
+
+* If a user enters a misspelled word, say "goot" instead of "good", algorithm can be improved to correct the prediction with the most similar word and then predict the next word based on that
+* Since we have to compromise the training set for app performance, one scope is to big data techniques to overcome that and make a more accurate model
+* Next step is to build a R shiny app
+* The app would take a string of words from user and predict the next word which the user would have typed next, based on backoff model

@@ -3,15 +3,12 @@
 
 Hello there visitor.
 
-
-* This is my repository for some of the work I have been doing since August 2017
-
-* Check out my pet projects folder (more projects coming up...)
+* This is my repository for all the work I have coded in R (upcoming Python) in last 1 year. It includes assignment submissions for different courses I have undertaken towards my degree "Master of Science - Business Analytics"
 
 * This repository is most useful for a recruiter who wants to evaluate my way/style of writing codes 
 
 * You would also like to checkout my Rpubs profile: https://rpubs.com/vermaph & Tableau public profile: https://public.tableau.com/profile/piyush.verma#!/
 
-* If you like my work, a word of appreciation will make my day and critical suggestions will help me move forward. Send both of them to: piyushverma.iitkgp@gmail.com
+* Very soon, I will be adding codes for some of my pet projects 
 
 Have a great day !!

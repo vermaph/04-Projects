@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/370869/789ba38d1cb74fc994fc171315917c1d
+bundleId: https://api.rpubs.com/api/v1/document/370869/789ba38d1cb74fc994fc171315917c1d
+url: http://rpubs.com/vermaph/370869
+when: 1521382393.01294
