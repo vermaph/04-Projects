@@ -5,9 +5,9 @@ account: vermaph
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 294585
-bundleId: 1267195
+bundleId: 1343648
 url: https://vermaph.shinyapps.io/Text_Prediction/
-when: 1520979961.70121
+when: 1524850645.76521
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: bigram.csv|data_spec.jpg|en_US.blogs.txt|en_US.news.txt|en_US.twitter.txt|Ngram_data.csv|Ngram_data.RData|profanity_filter.txt|trigram.csv|unigram.csv
+ignoredFiles: bigram.csv|Coursera Capstone Project - Linguistic Model.R|en_US.blogs.txt|en_US.news.txt|en_US.twitter.txt|function.R|Go drop some science on that Data.JPG|image1.JPG|image2.JPG|image3.JPG|John Hopkins Data Science Specialization Capstone Project-rpubs.html|John Hopkins Data Science Specialization Capstone Project.md|John Hopkins Data Science Specialization Capstone Project.Rpres|John_Hopkins_Data_Science_Specialization_Capstone_Project.html|Milestone_report.html|Milestone_report.rmd|Ngram_data.csv|Ngram_data.RData|profanity_filter.txt|quadgram.csv|trigram.csv|unigram.csv

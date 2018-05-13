@@ -1,0 +1,13 @@
+name: Nextword
+title: Nextword
+username:
+account: vermaph
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 333897
+bundleId: 1346500
+url: https://vermaph.shinyapps.io/Nextword/
+when: 1525056300.47629
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: bigram.csv|Coursera Capstone Project - Linguistic Model.R|en_US.blogs.txt|en_US.news.txt|en_US.twitter.txt|function.R|Go drop some science on that Data.JPG|image1.JPG|image2.JPG|image3.JPG|John Hopkins Data Science Specialization Capstone Project-rpubs.html|John Hopkins Data Science Specialization Capstone Project.md|John Hopkins Data Science Specialization Capstone Project.Rpres|John_Hopkins_Data_Science_Specialization_Capstone_Project.html|Milestone_report.html|Milestone_report.rmd|Ngram_data.csv|profanity_filter.txt|quadgram.csv|trigram.csv|unigram.csv|old grams/bigram.RData|old grams/Ngram_data.RData|old grams/quadgram.RData|old grams/triigram.RData|old grams/unigram.RData
