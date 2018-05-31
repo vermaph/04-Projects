@@ -60,7 +60,7 @@ shinyUI(fluidPage(theme = shinytheme("superhero")   # Giving Shiny a theme
                                  ,
                                  h3("My LinkedIn !", a("Piyush Verma", href="https://www.linkedin.com/in/vermaph/"))
                                  ,
-                                 h3("Github location !", a("Predict the next word R code", href="https://github.com/grammilo/Codes/tree/master/Pet%20Projects/Text%20Mining%20-%20Word%20Prediction"))
+                                 h3("Github location !", a("Predict the next word R code", href="https://github.com/vermaph/04-Projects/tree/master/Predicting%20text%20using%20N-Grams"))
                                  ,
                                  h3("You can find my other pet projects here !", a("Tableau Public,", href="https://public.tableau.com/profile/piyush.verma#!/"), a("R Pubs", href="https://rpubs.com/vermaph"))
                                 )

@@ -1,0 +1,12 @@
+name: Nextword
+title: Nextword
+username:
+account: vermaph
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 333897
+bundleId: 1403685
+url: https://vermaph.shinyapps.io/Nextword/
+when: 1527805713.36342
+asMultiple: FALSE
+asStatic: FALSE

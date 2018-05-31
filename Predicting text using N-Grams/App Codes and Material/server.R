@@ -1,17 +1,17 @@
-## R Shiny App Location: https://vermaph.shinyapps.io/Text_Prediction/
+## R Shiny App Location: https://vermaph.shinyapps.io/Nextword/
 
-library(tm)
-library(knitr)
-library(stringi)
-library(RWeka)
-library(ggplot2)
-
+library("tm")
+library("knitr")
+library("stringi")
+library("RWeka")
+library("ggplot2")
+library("shiny")
 
 #setwd("C:/0000/05 Github/Codes/Pet Projects/Text Mining - Word Prediction")
 #setwd("C:/0000/05 Github/Codes/Pet Projects/Text Mining - Word Prediction")
 unigram<- readRDS("./unigram.RData")
 bigram <- readRDS("./bigram.RData")
-trigram <- readRDS("./triigram.RData")
+trigram <- readRDS("./trigram.RData")
 quadgram <- readRDS("./quadgram.RData")
 msg<-""
 
@@ -85,3 +85,4 @@ shinyServer(function(input, output) {
     paste("This app can be used as a POC to build more evolved products. For example, a customer types spicy and the app should produce the recipes for all the spicy cuisines filtered according to the customer's historic orders (European-Asian-Mediterranean etc). Or it can be used to predict a service complain even before a customer completes typing his complaint: possibly cutting down the critical customer service time")});
 }
 )
+

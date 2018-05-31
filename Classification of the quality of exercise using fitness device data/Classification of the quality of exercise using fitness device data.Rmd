@@ -1,5 +1,5 @@
 ---
-title: "Identifying the quality of exercise from device data"
+title: "Classification of quality of exercise using Random Forest, Gradient Boosting and Linear Discriminant Model"
 author: "Piyush Verma"
 date: "December 20, 2017"
 output: html_document
@@ -12,21 +12,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. Here exercises are classified as:
+
+ * A: Best 
+ * B: Good 
+ * C: Medium
+ * D: Bad
+ * E: Worst
 
 ####Jawbone Up
 ```{r echo=FALSE, out.width='50%'}
-knitr::include_graphics('./jawboneup.jpg')
+knitr::include_graphics('./Data/jawbone.jpg')
 ```
 
 ####Fitbit
 ```{r echo=FALSE, out.width='50%'}
-knitr::include_graphics('./fitbit.jpg')
+knitr::include_graphics('./Data/fitbit.jpg')
 ```
 
 ####Nike Fuel Band
 ```{r echo=FALSE, out.width='50%'}
-knitr::include_graphics('./nikefuelband.jpg')
+knitr::include_graphics('./Data/nikefuelband.jpg')
 ```
 
 
@@ -39,8 +45,8 @@ library(caret)
 library(readr)
 set.seed(123)
 #Reading the dataset
-testing <- read_csv("C:/Users/piyus/Desktop/pml-testing.csv")
-training <- read_csv("C:/Users/piyus/Desktop/pml-training.csv")
+testing <- read_csv("./Data/pml-testing.csv")
+training <- read_csv("./Data/pml-training.csv")
 #Dimensions of training
 dim(training)
 ```
