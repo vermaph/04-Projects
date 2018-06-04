@@ -1,0 +1,86 @@
+---
+title: "Customer Segmentation for a retail supermarket using K-means clustering and predicting yearly sales using machine learning"
+author: "Piyush Verma"
+date: "March 01, 2018"
+output: html_document
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Introduction
+
+Supermarket constantly need to know about their customers and shopping behavior. They are generally interested in knowing which type of their customers form the majority of their revenues. And which demographic do they belong to. Once the supermarket has this inforamtion, i.e if they can divide very carefully a customer according to their shopping behavior, they can use these segments to tailor marketing emails and can try to uplift sales and may enhance a customer experience. 
+
+In this project, I would start with the Tableau visualizationn to identify the major revenue sources, then I would be using R to perform K-Mediods realization of K-Means clustering to segment customers according to industry wide popular *Customer Value Model (also known as RFM-Recency Frequency Monetary Model)*. This will require some kind os business rules, which in this case would be my assumptions from industry experience.
+
+Lastly I would be trying to fit multiple machine learning models to see if I can predict the yearly sales of a household based on their demographics, shopping freqeuncy and basket values. 
+
+## About the Data
+
+I can't make available the original dataset (because of privacy concerns), but can show the approach to analysis. The data provided here was part of a hackathon. The original retail dataset contained 2.5 million records at customer-store-product-day level comprising sales of 2 years.
+
+The data has been masked and is at the household-transaction level. The complete files (related to analyais and code) for the project can be found [here](https://github.com/vermaph/04-Projects/tree/master/Customer%20Segmentation%20for%20a%20retail%20supermarket). The overall data had 3 sets:
+
+ * Transactional Data : Each observation in the data is one transaction done by a household at some store. Total number of households is 796.
+ * Product Data : Details about the product id.
+ * Household Demographic Data : Details about the household like family income, age of the family head, number of kids, family type etc
+ 
+
+**Data Cleaning (Processing) and Creating View** : The given data sets needed some cleaning. So the cleaning was done using SQL. After cleaning, the three datasets were clubbed together and two views were created:
+
+ * View number 1: Filtering data to last 1 year and and calculating annual sales,visits and basket value for a household   
+ * View number 2: Creating a Customer Value Model (called RFM) view from the above view and having metrics like Recency, Frequency and Monetary
+
+The code for cleaning can be found [here](04-Projects/Customer Segmentation for a retail supermarket/Code 1 Data Cleaning.sql).
+The code for creating a customer value model can be found here,
+
+
+**Data Exploration**: Tableau was used to get a high-level understanding about the supermarket by fragmenting sales by type of customers and departments. [Here](https://public.tableau.com/profile/piyush.verma#!/vizhome/AnalysisofaSupermarketChain/Final) is the visualization.
+
+**Alternate Report**: Apart from this R markdown report, a word document has also been created. It can be found [here](04-Projects/Customer Segmentation for a retail supermarket/Report.docx), It has more details on what needed to be cleaned and how it was cleaned, how the view was created and how the data was clubbed together.  
+
+**Business Rules (Assumption)**: While creating the flitered view following business rules were used:
+
+ * The complete data had five years of data for 92000 products. But for the scope of analysis only one year worth of data was used.
+ * Only those products were included in the **Segmentation** which were bought by atleast 25 housholds in last one year
+
+## Data Exploration
+
+Following are couple of plots from Tableau Visualization. Below plot tells us that:
+
+ * Top 5 department which generate the most revenue are Grocery, Drug, Produce, Kiosk-gas and Meat. 
+ * Further, most of the customers are aged between 35 - 44 and they mostly buy in Grocery.
+ 
+  ![](Graph_1.JPG)
+
+</br>
+
+ * **"HIGH-VALUE"** baskets (extreme top-right) contain only certain Departmental products (like **Cosmetics, Deli, Drug, Grocery**) and doesn't involve certain other Departments (like Video Rental, Housewares, Toys, Travel & Leisure products)
+ 
+  ![](Graph_2.JPG)
+
+## Customer Segmentation
+
+
+To deploy **Customer VALUE Model**, Recency, Freqeuncy and Monetary variables were defined and calculated in SQL. Following definitions were used:
+
+ * **Recency**: Days since last shop
+ * **Frequency**: Counts of visits in last 4 weeks
+ * **Monetary**: Total spend in last 4 weeks
+ 
+The SQL code used to create the **Customer Value Model** is here. A view has been created and i ahs information on customer demographics, annual spend and visits and recency-freqeuncy-monetary values. Now the K-Mediod clustering algorithm was used to segment customers based on these metrics. 
+
+
+
+
+Following were the results: 

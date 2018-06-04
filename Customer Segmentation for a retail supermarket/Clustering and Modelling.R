@@ -5,15 +5,11 @@ library("rattle")   # For visualizing the random forest tree
 library("ggplot2")  # For visualizations
 library("cluster")   
 library("Rtsne")    # For visualizing the clustering in 2-D
-library("RODBC")    # For connecting SQL RFM view with R
 
-dbconnection <- odbcDriverConnect("Driver=ODBC Driver 11 for SQL Server;Server=SCOTT\\SQLEXPRESS; Database=SUPERMARKET;Uid=; Pwd=; trusted_connection=yes")
-Customer_Data <- sqlQuery(dbconnection,paste("select * from RFM;"))
-odbcClose(dbconnection)
 
 ############################## Clustering of the Customers ################################################ 
 ## Calculate Gower Distance
-gower_dist <- daisy(Customer_Data[,-1],metric = "gower", type = list(logratio = c(8:13))) 
+gower_dist <- daisy(Customer_Data[,-1],metric = "gower", type = list(logratio = c(8,9,10))) 
 # Log transformation for positively skewed variables: FAMILY_TOT_SALES, FAMILY_TOT_VISITS
 
 
@@ -28,7 +24,7 @@ ggplot(data=tab,aes(x = x,y = sil_width))+geom_point(cex=3,col="red")+geom_line(
 
 
 ## Creating clusters
-pam_fit<-pam(gower_dist, diss=TRUE, k = 7)
+pam_fit<-pam(gower_dist, diss=TRUE, k = 8)
 Customer_Data<-cbind(Customer_Data, Group = pam_fit$clustering)
 
 ## Visualizing the clusters
@@ -41,8 +37,8 @@ tsne_data <- tsne_obj$Y %>%
 
 ggplot(aes(x = X, y = Y), data = tsne_data) + geom_point(aes(color = cluster)) + ggtitle("Customer Segments") + theme(plot.title = element_text(hjust = 0.5))
 
-Customer_Data2<-melt(Customer_Data,Group=Group,measure.vars = )
-ggplot(data=Customer_Data)+geom_boxplot(aes(x=Group,y=ANNUAL_SALES,color = Group))+facet_wrap(~Group)
+Customer_Data2<-melt(Customer_Data,Group=Group,measure.vars = FAMILY_TOT_SALES)
+ggplot(data=Customer_Data)+geom_boxplot(aes(x=Group,y=FAMILY_TOT_SALES,color = Group))+facet_wrap(~Group)
 
 
 result<-Customer_Data %>% 
@@ -69,10 +65,7 @@ library("nnet")
 # We will use cross-validation to calculate error and tune model
 
 library("readxl")
-Customer_Data <-
-  
-  
-  read_excel("./Customer Data.xlsx")
+Customer_Data <- read_excel("./Customer Data.xlsx")
 View(Customer_Data)
 names<-c(2:8)
 Customer_Data[,names]<-lapply(Customer_Data[,names],factor)
