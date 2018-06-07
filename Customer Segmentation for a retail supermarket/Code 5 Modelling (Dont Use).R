@@ -1,57 +1,4 @@
 ##############################
-## Segmentation
-##############################
-library("rattle")   # For visualizing the random forest tree
-library("ggplot2")  # For visualizations
-library("cluster")   
-library("Rtsne")    # For visualizing the clustering in 2-D
-library("RODBC")    # For connecting SQL RFM view with R
-
-dbconnection <- odbcDriverConnect("Driver=ODBC Driver 11 for SQL Server;Server=SCOTT\\SQLEXPRESS; Database=SUPERMARKET;Uid=; Pwd=; trusted_connection=yes")
-Customer_Data <- sqlQuery(dbconnection,paste("select * from RFM;"))
-odbcClose(dbconnection)
-
-############################## Clustering of the Customers ################################################ 
-## Calculate Gower Distance
-gower_dist <- daisy(Customer_Data[,-1],metric = "gower", type = list(logratio = c(8:13))) 
-# Log transformation for positively skewed variables: FAMILY_TOT_SALES, FAMILY_TOT_VISITS
-
-
-## Calculate optimal number of clusters
-sil_width <- c(NA)
-for(i in 2:20){
-  pam_fit<-pam(gower_dist, diss = TRUE,k = i)  # PAM: Partitioning Around Medoids 
-  sil_width[i]<-pam_fit$silinfo$avg.width
-}
-tab<-data.frame(x=1:20,sil_width=sil_width)
-ggplot(data=tab,aes(x = x,y = sil_width))+geom_point(cex=3,col="red")+geom_line()+ggtitle("Silhoutte Width Vs Number of clusters")+theme(plot.title = element_text(hjust=0.5))+xlab("Number of clusters")
-
-
-## Creating clusters
-pam_fit<-pam(gower_dist, diss=TRUE, k = 7)
-Customer_Data<-cbind(Customer_Data, Group = pam_fit$clustering)
-
-## Visualizing the clusters
-tsne_obj <- Rtsne(gower_dist, is_distance = TRUE)
-tsne_data <- tsne_obj$Y %>%
-  data.frame() %>%
-  setNames(c("X", "Y")) %>%
-  mutate(cluster = factor(pam_fit$clustering),
-         name = Customer_Data$H_KEY)
-
-ggplot(aes(x = X, y = Y), data = tsne_data) + geom_point(aes(color = cluster)) + ggtitle("Customer Segments") + theme(plot.title = element_text(hjust = 0.5))
-
-Customer_Data2<-melt(Customer_Data,Group=Group,measure.vars = )
-ggplot(data=Customer_Data)+geom_boxplot(aes(x=Group,y=ANNUAL_SALES,color = Group))+facet_wrap(~Group)
-
-
-result<-Customer_Data %>% 
-  group_by(Group) %>% 
-  summarize(Avg_sales = mean(FAMILY_TOT_SALES), Avg_visits = mean(FAMILY_TOT_VISITS)) %>%
-  arrange(desc(Avg_sales),desc(Avg_visits))
-
-
-##############################
 ## Modelling
 ##############################
 library("caret")
@@ -69,10 +16,7 @@ library("nnet")
 # We will use cross-validation to calculate error and tune model
 
 library("readxl")
-Customer_Data <-
-  
-  
-  read_excel("./Customer Data.xlsx")
+Customer_Data <- read_excel("./Customer Data.xlsx")
 View(Customer_Data)
 names<-c(2:8)
 Customer_Data[,names]<-lapply(Customer_Data[,names],factor)
