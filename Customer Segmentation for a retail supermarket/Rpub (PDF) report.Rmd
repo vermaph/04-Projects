@@ -3,8 +3,8 @@ title: "Customer Segmentation for a retail supermarket using K-means clustering"
 author: "Piyush Verma"
 date: "March 01, 2018"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 <style>
@@ -49,6 +49,10 @@ I am using the transaction data of a US based retail supermarket chain. I can't 
 
 The raw data files were imported to Microsoft SQL Server management studio before the analysis.
 
+<br />
+<br />
+<br />
+
 **Data Cleaning (Processing) and Creating View** : 
 
  1. The given data sets needed some cleaning. So the cleaning was done using SQL. The code for cleaning can be found [here](04-Projects/Customer Segmentation for a retail supermarket/Code 1 Data Cleaning.sql).
@@ -70,15 +74,16 @@ ALTER TABLE [dbo].[transaction_data] ALTER COLUMN [PRODUCT_ID] INT;
 ALTER TABLE [dbo].[transaction_data] ALTER COLUMN [QUANTITY] INT;
 ALTER TABLE [dbo].[transaction_data] ALTER COLUMN [STORE_ID] INT;
 ALTER TABLE [dbo].[transaction_data] ALTER COLUMN [WEEK_NO] INT;
-ALTER TABLE [dbo].[transaction_data] DROP COLUMN [COUPON_DISC]; --Dropping columns which wont be used
-ALTER TABLE [dbo].[transaction_data] DROP COLUMN [COUPON_MATCH_DISC]; --Dropping columns which wont be used
+ALTER TABLE [dbo].[transaction_data] DROP COLUMN [COUPON_DISC]; --Dropping column
+ALTER TABLE [dbo].[transaction_data] DROP COLUMN [COUPON_MATCH_DISC]; --Dropping column
 
 --------------------------------------------------------------------------
 --2) Removing garbage values
 --------------------------------------------------------------------------
 
 UPDATE [dbo].[transaction_data] 
-SET [TRANS_TIME] = CONCAT(LEFT([TRANS_TIME],2),':',RIGHT([TRANS_TIME],2),':00') --Modifying Time column to be more readble
+SET [TRANS_TIME] = CONCAT(LEFT([TRANS_TIME],2),':',RIGHT([TRANS_TIME],2),':00') 
+                                                            --Modifying column
 WHERE [BASKET_ID] IS NOT NULL;
 
 DELETE FROM [dbo].[transaction_data] 
@@ -104,43 +109,48 @@ ALTER TABLE [dbo].[hh_demographic] ALTER COLUMN [H_KEY] INT;
     + **View number 2**: Creating a **Customer Value Model** (also called RFM) view from the above view and calculated metrics like Recency, Frequency and Monetary. The code for creating a customer value model can be found [here](https://github.com/vermaph/04-Projects/blob/master/Customer%20Segmentation%20for%20a%20retail%20supermarket/Code%202%20Customer%20Value%20Model.sql)
     
 ```{r eval=FALSE, warning=FALSE, echo=TRUE}
-
+--
+--
 --VIEW - 1
-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------
 --Creating a base dataset to work on: 
 --1) Clubbing all three datasets
---2) Introducing 3 new columns calculating yearly sales and visits and also sales per visits value 
+--2) Introducing 3 new columns calculating yearly sales and 
+--   visits and also sales per visits value 
 --DROP VIEW SUPERMARKET_FILTER_VIEW;
-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------
 
 CREATE VIEW SUPERMARKET_FILTER_VIEW AS
+  SELECT 
+  T.H_KEY
+  ,T.[BASKET_ID]
+  ,T.[DAY]
+  ,T.[PRODUCT_ID]
+  ,T.[STORE_ID]
+  ,D.[AGE_DESC]
+  ,D.[MARITAL_STATUS_CODE]
+  ,D.[INCOME_DESC]
+  ,D.[HOMEOWNER_DESC]
+  ,D.[HH_COMP_DESC]
+  ,D.[HOUSEHOLD_SIZE_DESC]
+  ,D.[KID_CATEGORY_DESC]
+  ,P.[DEPARTMENT]
+  ,P.[BRAND]
+  ,P.[MANUFACTURER]
+  ,T.[QUANTITY]
+  ,T.[SALES_VALUE] AS TRANS_VALUE
 
-SELECT 
-T.H_KEY
-,T.[BASKET_ID]
-,T.[DAY]
-,T.[PRODUCT_ID]
-,T.[STORE_ID]
-
-,D.[AGE_DESC]
-,D.[MARITAL_STATUS_CODE]
-,D.[INCOME_DESC]
-,D.[HOMEOWNER_DESC]
-,D.[HH_COMP_DESC]
-,D.[HOUSEHOLD_SIZE_DESC]
-,D.[KID_CATEGORY_DESC]
-
-,P.[DEPARTMENT]
-,P.[BRAND]
-,P.[MANUFACTURER]
-
-,T.[QUANTITY]
-,T.[SALES_VALUE] AS TRANS_VALUE
-
-,SUM(T.[SALES_VALUE]) OVER(PARTITION BY T.H_KEY) AS FAMILY_TOT_SALES
-,DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID) + DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID DESC) - 1  AS FAMILY_TOT_VISITS
-,CAST(SUM(T.[SALES_VALUE]) OVER(PARTITION BY T.H_KEY)/(DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID) + DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID DESC) - 1) AS DECIMAL(10,4)) AS  FAMILY_VALUE
-
+  , SUM(T.[SALES_VALUE]) OVER(PARTITION BY T.H_KEY) AS FAMILY_TOT_SALES
+  , DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID) + 
+    DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID DESC) - 1  
+    AS FAMILY_TOT_VISITS
+  , CAST(SUM(T.[SALES_VALUE]) OVER(PARTITION BY T.H_KEY)
+        /
+        ( DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID) 
+          + 
+          DENSE_RANK() OVER(PARTITION BY T.H_KEY ORDER BY T.BASKET_ID DESC) - 1
+        ) AS DECIMAL(10,4)
+        ) AS  FAMILY_VALUE
 FROM [dbo].[transaction_data] T 
 INNER JOIN [dbo].[hh_demographic] D
 ON T.H_KEY = D.H_KEY
@@ -149,9 +159,6 @@ ON P.PRODUCT_ID = T.PRODUCT_ID
 WHERE T.DAY<366 ---1 year of data
 --AND T.H_KEY = 1
 ;
-```
-
-```{r  eval=FALSE, warning=FALSE, echo=TRUE}
 --VIEW - 2
 --------------------------------------------------------------
 -- Creating an aggregated view for weekly shopping
@@ -168,11 +175,9 @@ R.[H_KEY]
 ,[HH_COMP_DESC]
 ,[HOUSEHOLD_SIZE_DESC]
 ,[KID_CATEGORY_DESC]
-
 ,[FAMILY_TOT_SALES] AS ANNUAL_SALES
 ,[FAMILY_TOT_VISITS] AS ANNUAL_VISITS
 ,[FAMILY_VALUE] AS ANNUAL_BASKET_VALUE
-
 ,RECENCY
 ,FREQUENCY
 ,MONETARY
@@ -243,7 +248,7 @@ INNER JOIN
 ```
 
 
-**Business Rules (Assumption)**: While creating the flitered view following business rules were used:
+**Business Rules (Assumptions)**: While creating the flitered view following business rules were used:
 
  * The complete data had five years of data for 92000 products. But for the scope of analysis only one year worth of data was used.
  * Only those products were included in the **Segmentation** which were bought by atleast 25 housholds in last one year
@@ -339,8 +344,8 @@ ggplot(aes(x = X, y = Y), data = tsne_data) + geom_point(aes(color = cluster)) +
 
 Below table gives the summary for the groups/segments formed:
 
-```{r echpo=TRUE, warning=FALSE, message=FALSE}
-Customer_Data %>% 
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+res<-Customer_Data %>% 
   mutate(Group = as.factor(Group)) %>%
   group_by(Group) %>%
   summarize(
@@ -362,6 +367,11 @@ Customer_Data %>%
 
 
 ## **Conclusion**
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+res
+```
+
 
 Going by the above results we can say that:
 
