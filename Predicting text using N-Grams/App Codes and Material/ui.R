@@ -54,7 +54,7 @@ shinyUI(fluidPage(theme = shinytheme("superhero")   # Giving Shiny a theme
                                  div(textOutput("display"),style = "color:green"),  # Displays which gram was used for prediction
                                  br(),
                                  h3("My prediction:"),
-                                 div(textOutput("prediction"),style = "color:red")  # Displays the prediction 
+                                 div(textOutput("prediction"),style = "color:white")  # Displays the prediction 
                                  ,
                                  tags$style(type="text/css", "#string { height: 50px; width: 100%; text-align:center; font-size: 60px; display: block;}")
                                  ,
