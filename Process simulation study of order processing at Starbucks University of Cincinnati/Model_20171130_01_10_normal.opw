@@ -1,0 +1,37 @@
+[RESOURCES]
+Self service counter
+Beverage server
+Food server
+Cashier
+Chairs
+[VARIABLES]
+Chairs and Tables.NumberIn
+Chairs and Tables.NumberOut
+Customer Arrival.NumberOut
+Clubbed order Wait.NumberOut True
+Cash Counter.NumberIn
+Wants Sitting Area?.NumberOut False
+Beverage only.NumberOut True
+Club food and beverage order.NumberOut
+Separate Food and Beverages.NumberOut Orig
+Food and Beverage.NumberOut True
+Wants Sitting Area?.NumberOut True
+Beverage processing.NumberOut
+Is Sitting Area full?.NumberOut True
+Beverage only.NumberOut False
+Is Sitting Area full?.NumberOut False
+Beverage processing.NumberIn
+Clubbed order Wait.NumberOut False
+Self Service Area.NumberIn
+Cash Counter.NumberOut
+Counter Food.NumberOut False
+Counter Item only.NumberOut False
+Self Service Area.NumberOut
+Food and Beverage.NumberOut False
+Separate Food and Beverages.NumberOut Dup
+Food processing.NumberOut
+Counter Food.NumberOut True
+Exit.NumberOut
+Food processing.NumberIn
+Counter Item only.NumberOut True
+Transfer Time

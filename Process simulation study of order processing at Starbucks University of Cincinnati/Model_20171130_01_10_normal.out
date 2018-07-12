@@ -1,0 +1,88 @@
+SIMAN Run Controller.
+
+5.0156953 Minutes>
+                                      ARENA Simulation Results
+                           LINDNER COLLEGE OF BUSINESS - License: STUDENT
+
+                                  Summary for Replication 1 of 325
+
+Project: Project Starbucks Simulation                                Run execution date : 6/18/2018
+Analyst: LINDNER COLLEGE OF BUSINESS                                 Model revision date: 6/18/2018
+
+Replication ended at time      : 5.0156953 Minutes 
+Base Time Units: Minutes
+
+                                           TALLY VARIABLES
+
+Identifier                                  Average   Half Width  Minimum    Maximum   Observations
+___________________________________________________________________________________________________
+
+Order_Type3_LOS                                 --         --         --         --          0
+Record Entry                                .00000     (Insuf)    .00000     .00000          5    
+Order_Type2_LOS                                 --         --         --         --          0
+Batch_Size_2_LOS                                --         --         --         --          0
+Order_Type4_LOS                                 --         --         --         --          0
+Record All customers                            --         --         --         --          0
+Order_Type1_LOS                                 --         --         --         --          0
+Batch_Size_1_LOS                                --         --         --         --          0
+Customers.VATime                                --         --         --         --          0
+Customers.NVATime                               --         --         --         --          0
+Customers.WaitTime                              --         --         --         --          0
+Customers.TranTime                              --         --         --         --          0
+Customers.OtherTime                             --         --         --         --          0
+Customers.TotalTime                             --         --         --         --          0
+Cash Counter.Queue.WaitingTime              .31726     (Insuf)    .00000     .57211          5    
+Beverage processing.Queue.WaitingTime       .00000     (Insuf)    .00000     .00000          2    
+Food processing.Queue.WaitingTime           .00000     (Insuf)    .00000     .00000          2    
+Self Service Area.Queue.WaitingTime         .00000     (Insuf)    .00000     .00000          2    
+Club food and beverage order.Queue.Waiting      --         --         --         --          0
+Chairs and Tables.Queue.WaitingTime             --         --         --         --          0
+
+                                     DISCRETE-CHANGE VARIABLES
+
+Identifier                                  Average   Half Width  Minimum    Maximum   Final Value
+___________________________________________________________________________________________________
+
+Customers.WIP                               3.3251     (Insuf)    .00000     6.0000     6.0000    
+Self service counter.NumberBusy             .50086     (Insuf)    .00000     2.0000     1.0000    
+Self service counter.NumberScheduled        3.0000     (Insuf)    3.0000     3.0000     3.0000    
+Self service counter.Utilization            .16695     (Insuf)    .00000     .66667     .33333    
+Beverage server.NumberBusy                  .61353     (Insuf)    .00000     1.0000     1.0000    
+Beverage server.NumberScheduled             1.0000     (Insuf)    1.0000     1.0000     1.0000    
+Beverage server.Utilization                 .61353     (Insuf)    .00000     1.0000     1.0000    
+Food server.NumberBusy                      .69806     (Insuf)    .00000     1.0000     1.0000    
+Food server.NumberScheduled                 1.0000     (Insuf)    1.0000     1.0000     1.0000    
+Food server.Utilization                     .69806     (Insuf)    .00000     1.0000     1.0000    
+Cashier.NumberBusy                          .98339     (Insuf)    .00000     1.0000     1.0000    
+Cashier.NumberScheduled                     1.0000     (Insuf)    1.0000     1.0000     1.0000    
+Cashier.Utilization                         .98339     (Insuf)    .00000     1.0000     1.0000    
+Chairs.NumberBusy                           .00000     (Insuf)    .00000     .00000     .00000    
+Chairs.NumberScheduled                      36.000     (Insuf)    36.000     36.000     36.000    
+Chairs.Utilization                          .00000     (Insuf)    .00000     .00000     .00000    
+Cash Counter.Queue.NumberInQueue            .31627     (Insuf)    .00000     2.0000     .00000    
+Beverage processing.Queue.NumberInQueue     .08016     (Insuf)    .00000     1.0000     1.0000    
+Food processing.Queue.NumberInQueue         .00000     (Insuf)    .00000     .00000     .00000    
+Self Service Area.Queue.NumberInQueue       .00000     (Insuf)    .00000     .00000     .00000    
+Club food and beverage order.Queue.NumberI  .00000     (Insuf)    .00000     .00000     .00000    
+Chairs and Tables.Queue.NumberInQueue       .00000     (Insuf)    .00000     .00000     .00000    
+
+                                             OUTPUTS
+
+Identifier                                   Value
+_____________________________________________________________
+
+Beverage_normal                             .00000    
+Customers.NumberIn                          6.0000    
+Customers.NumberOut                         .00000    
+Self service counter.NumberSeized           2.0000    
+Self service counter.ScheduledUtilization   .16695    
+Beverage server.NumberSeized                2.0000    
+Beverage server.ScheduledUtilization        .61353    
+Food server.NumberSeized                    2.0000    
+Food server.ScheduledUtilization            .69806    
+Cashier.NumberSeized                        5.0000    
+Cashier.ScheduledUtilization                .98339    
+Chairs.NumberSeized                         .00000    
+Chairs.ScheduledUtilization                 .00000    
+System.NumberOut                            .00000    
+
