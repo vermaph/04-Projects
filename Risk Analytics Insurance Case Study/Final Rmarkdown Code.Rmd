@@ -1,0 +1,725 @@
+---
+title: "Claim risk analytics for an insurance company"
+author: "Piyush Verma"
+date: "June 24, 2018"
+output: html_document
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+
+```{r knitr-setup, include=FALSE}
+library(knitr)
+library(vcd)
+opts_chunk$set(out.extra='style="display:block; margin: auto"',
+fig.align="center", fig.height = 4, fig.width = 4)
+opts_knit$set(progress = FALSE, verbose = TRUE)
+```
+
+
+
+## **Introduction**
+
+This data challenge is a part of case study done for an insurance company. The data consisted of two sets: 2017 policies data and fresh 2018 data. Both the sets were at the individual quote level and contained details about the customer demographic, vehicle, traffic condition and the claims made in the past. It had 60392 observations and 9 variables. The objectives of the challenge were as follows:
+  
+  1. Identify the potential:
+      (a) non-risky 2018 customers 
+      (b) low risy 2018 customers
+  2. Risk-profiling for all the risky 2018 customers, based on features from 2017 data.
+
+The objectives are centered at marketing campaigns engaging future 2018 customers based on their risk profiles.
+
+## **Loading libraries and reading files**
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=FALSE}
+setwd("C:/0000/04-Projects/Risk Analytics Insurance Case Study")
+```
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=TRUE}
+library(readr)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(VIM)
+library(mice)
+library(corrplot)
+library(randomForest)  
+library(Matrix)
+library(ROCR)
+library(xgboost)
+library(caret)
+library(car)
+library(cluster)  
+library(Rtsne)    
+library(RODBC)    
+library(dplyr)
+library(kableExtra)
+library(Metrics)    # For calculating auc
+library(GGally)
+
+raw_data_2017 <- suppressMessages(as.data.frame(read_csv("./auto_policies_2017.csv")))
+numclaims<-raw_data_2017$numclaims
+claimcst0<-raw_data_2017$claimcst0
+raw_data_2018 <- suppressMessages(as.data.frame(read_csv("./auto_potential_customers_2018.csv")))
+quote_number<-raw_data_2018$quote_number
+```
+
+## **Data Processing**
+
+The data had many missing values for:
+
+  1. *claim_office (83%)*: Office were claim was made
+  2. *agecat (8%)*: Age category of the driver 
+  
+Proportion of missing values for each feature and combination of features was best understood from the plot below:
+
+  1. Only 13% observations have all values, rest of 87% observations missed values for one, two, three or four features
+  2. Since 83% observations have missing values for claim_office, which is more than recommended 5%, it was removed
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=FALSE, results = "hide", fig.height = 5, fig.width = 5, fig.align="center"}
+aggr_plot <- aggr(raw_data_2017, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, 
+                  labels=names(raw_data_2017), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
+ggplot(raw_data_2017, aes(x=claim_office)) + 
+  geom_bar(stat="count", fill = "steelblue", col = "black") +
+  ggtitle("Count by Claims Office") + theme(plot.title = element_text(hjust=0.5)) +
+  xlab("")
+raw_data_2017<-raw_data_2017[,-12]
+raw_data_2017$date_of_birth<-as.Date(raw_data_2017$date_of_birth,"%m/%d/%Y")
+raw_data_2017$age<-as.numeric(floor((today() - raw_data_2017$date_of_birth)/365))
+raw_data_2018$date_of_birth<-as.Date(raw_data_2018$date_of_birth,"%m/%d/%Y")
+raw_data_2018$age<-as.numeric(floor((today() - raw_data_2018$date_of_birth)/365))
+```
+
+Preview of the data:
+```{r echo=FALSE, eval = TRUE}
+kable(head(raw_data_2017,20),"html") %>%
+kable_styling() %>%
+  scroll_box(width = "800px", height = "200px")
+```
+
+## **Missing value imputation**
+
+Missing values for variable agecat, `credit_score` and `traffic_index` were imputed in this section. `agecat` for missing values was calculated using `date_of_birth` and continuous variables: `credit_score` and `traffic_index` were imputed using <span style="color:red">`MICE`</span> package. The technique used for their imputation was: <span>``Predictive Mean Matching (pmm)``. The data was found to be missing randomly (ideal scenario). For example, in the plot below; <span style="color:red">**red**</span> left vertical boxplot shows the distribution of `credit_score` where `traffic_index` is missing and <span style="color:blue">**blue**</span> left vertical boxplot shows where both are present. Same analogy for the bottom horizontal boxplots. 
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=FALSE, fig.height = 5, fig.width = 5, fig.align="center"}
+marginplot(raw_data_2017[c("traffic_index","credit_score")])
+```
+
+For imputing the missing data in both the 2017 (training) & 2018 (testing) datasets, 2018 data was first appended to 2017 data and then the missing value was imputed for `NA`s in both the sets.
+
+Below plot shows that all the missing values have been immputed now.
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=TRUE, results = "hide", fig.height = 5, fig.width = 5, fig.align="center"}
+# Training Dataset
+raw_data_2017<-raw_data_2017 %>% 
+  mutate(agecat = ifelse(is.na(agecat),
+                         ifelse(18<=age & age<28,1,
+                                ifelse(28<=age & age<38,2,
+                                       ifelse(38<=age & age<48,3,
+                                              ifelse(48<=age & age<58,4,
+                                                     ifelse(58<=age & age<68,5,6))))),agecat))
+# Testing Dataset
+raw_data_2018<-raw_data_2018 %>%
+  mutate(agecat = ifelse(is.na(agecat),
+                         ifelse(18<=age & age<28,1,
+                                ifelse(28<=age & age<38,2,
+                                       ifelse(38<=age & age<48,3,
+                                              ifelse(48<=age & age<58,4,
+                                                     ifelse(58<=age & age<68,5,6))))),agecat))
+# Keeping only relevant columns ftr the imputing process
+raw_data_2017<-raw_data_2017[,c("gender","age","agecat","credit_score","area","traffic_index","veh_age","veh_body","veh_value")]
+raw_data_2018<-raw_data_2018[,c("gender","age","agecat","credit_score","area","traffic_index","veh_age","veh_body","veh_value")]
+# Correcting Data Types
+raw_data_2017$gender<-as.factor(raw_data_2017$gender)
+raw_data_2017$agecat<-as.factor(raw_data_2017$agecat)
+raw_data_2017$area<-as.factor(raw_data_2017$area)
+raw_data_2017$veh_body<-as.factor(raw_data_2017$veh_body)
+raw_data_2018$gender<-as.factor(raw_data_2018$gender)
+raw_data_2018$agecat<-as.factor(raw_data_2018$agecat)
+raw_data_2018$area<-as.factor(raw_data_2018$area)
+raw_data_2018$veh_body<-as.factor(raw_data_2018$veh_body)
+# Imputing the missing data using MICE package
+combined_data<-rbind(raw_data_2017,raw_data_2018)
+init = mice(combined_data, maxit=0) 
+meth = init$method
+meth[c("gender")]=""
+meth[c("age")]=""
+meth[c("agecat")]=""
+meth[c("area")]=""
+meth[c("veh_age")]=""
+meth[c("veh_body")]=""
+meth[c("veh_value")]=""
+meth[c("credit_score")]="pmm"
+meth[c("traffic_index")]="pmm"
+imputed = mice(combined_data, method=meth, m=1,maxit = 5,seed = 500)
+imputed <- complete(imputed)
+aggr_plot <- aggr(imputed, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, 
+                  labels=names(imputed), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
+```
+
+Next, a **binary response variable was created** in 2017 data as `claim_YN` based on column `claimcst0` (1 if some amount was claimed 0 if no amount was claimed).
+
+
+# <span style="color:blue">**SECTION 1:** </span>
+
+## **IDENTIFYING POTENTIAL NON-RISKY AND LOW-RISK 2018 CUSTOMERS** 
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=TRUE}
+index<-1:60392
+imp_2017<-imputed[index,]
+imp_2018<-imputed[-index,]
+imp_2017<-cbind(imp_2017,numclaims,claimcst0)
+imp_2017$claim_YN<-as.factor(ifelse(claimcst0>0,1,0)) # Response needs to be a category
+```
+
+
+<span style="color:red">**ASSUMPTION:**</span> Some vehicles had `veh_value` as zeroes, which doesn't sound practical. So below code changes the 0 vehicle values to max of their **vehicle_age + vehicle_body category** combination. Maximum because generally more risk is associated with higher valued vehicles and in this challenge one of our main task is to identify risky policies. 
+
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=TRUE}
+# Changing vehicles with 0 value to max of their vehicle_age + vehicle_body category
+imp_2017<-imp_2017 %>%
+  mutate(veh_value = ifelse(veh_value==0,
+                            ifelse(veh_body=="BUS",7.1830,
+                                   ifelse(veh_body=="MCARA",13.6400,
+                                          ifelse(veh_body=="MIBUS",5.0160,
+                                                 ifelse(veh_body=="SEDAN",24.9590,
+                                                        ifelse(veh_body=="STNWG",12.5400,6.2700))))),veh_value))
+
+imp_2018<-imp_2018 %>%
+  mutate(veh_value = ifelse(veh_value==0,
+                            ifelse(veh_body=="BUS",7.1830,
+                                   ifelse(veh_body=="MCARA",13.6400,
+                                          ifelse(veh_body=="MIBUS",5.0160,
+                                                 ifelse(veh_body=="SEDAN",24.9590,
+                                                        ifelse(veh_body=="STNWG",12.5400,6.2700))))),veh_value))
+```
+
+Preview after cleaning and imputation:
+```{r echo = FALSE, eval = TRUE}
+kable(head(imp_2017,20),"html") %>%
+kable_styling() %>%
+  scroll_box(width = "800px", height = "200px")
+```
+
+## **Data Exploration**
+
+Below plots were generated to understand the pattern of claims across variables.
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=FALSE, fig.height = 6, fig.width = 6, fig.show='hold'}
+op<-par(mfrow=c(6,2))
+#layout=c(6,2)
+imp_2017 %>%
+  select(gender,claim_YN) %>%
+  group_by(gender,claim_YN) %>%
+  summarise(cnt = n()) %>%
+  ggplot(aes(x=gender,y=cnt,fill = factor(claim_YN))) + 
+  geom_bar(stat="identity",position = "fill") +
+  ggtitle("Claims by Gender") + theme(plot.title = element_text(hjust=0.5)) +
+  xlab("") + ylab("Proportion")
+
+# Age
+imp_2017 %>%
+  select(age, claim_YN) %>%
+  group_by(age,claim_YN) %>%
+  summarise(cnt = n()) %>%
+  ggplot(aes(x=age,y=cnt,fill=factor(claim_YN))) + 
+  geom_bar(stat = "identity",position = "fill") +
+  ggtitle("Claim counts by Age") + theme(plot.title = element_text(hjust=0.5)) +
+  xlab("") + ylab("Proportion")
+
+# Age Category
+imp_2017 %>%
+  select(agecat,claim_YN) %>%
+  group_by(agecat,claim_YN) %>%
+  summarise(cnt = n()) %>%
+  ggplot(aes(x=agecat,y=cnt,fill = factor(claim_YN))) + 
+  geom_bar(stat="identity",position = "fill") +
+  ggtitle("Claims by Age Category") + theme(plot.title = element_text(hjust=0.5)) +
+  xlab("") + ylab("Proportion")
+
+# Credit Score
+ggplot(imp_2017, aes(x=credit_score,fill = factor(claim_YN))) + 
+  geom_histogram(position = "stack", binwidth=20) +
+  ggtitle("Claim by Credit Score") + theme(plot.title = element_text(hjust=0.5)) + 
+  xlab("")
+
+# Area
+imp_2017 %>%
+  select(area, claim_YN) %>%
+  group_by(area,claim_YN) %>%
+  summarise(cnt = n()) %>%
+ggplot(aes(x=area,y=cnt,fill = factor(claim_YN))) + 
+  geom_bar(stat = "identity",position = "fill") +
+  ggtitle("Claim by Area") + theme(plot.title = element_text(hjust=0.5)) + 
+  xlab("") + ylab("Proportion")
+
+# Traffic
+ggplot(imp_2017, aes(x=traffic_index,fill = factor(claim_YN))) + 
+  geom_histogram(position = "stack", binwidth=20) +
+  ggtitle("Claim by Traffic Index") + theme(plot.title = element_text(hjust=0.5)) +
+  xlab("")
+
+# Vehicle Age
+imp_2017 %>%
+  select(veh_age, claim_YN) %>%
+  group_by(veh_age,claim_YN) %>%
+  summarise(cnt = n()) %>%
+  ggplot(aes(x=veh_age,y=cnt,fill = factor(claim_YN))) + 
+  geom_bar(stat = "identity",position = "fill") +
+  ggtitle("Claim by Vehicle Age") + theme(plot.title = element_text(hjust=0.5)) + 
+  xlab("") + ylab("Proportion")
+
+# Vehicle Body
+imp_2017 %>%
+  select(veh_body, claim_YN) %>%
+  group_by(veh_body, claim_YN) %>%
+  summarise(cnt = n()) %>%
+  arrange(cnt) %>%
+  ggplot(aes(x=reorder(veh_body,-cnt), y = cnt, fill = factor(claim_YN))) + 
+  geom_bar(stat = "identity",position = "fill") +
+  ggtitle("Claim by Vehicle Body") + theme(plot.title = element_text(hjust=0.5),axis.text.x = element_text(angle = 90)) +
+  xlab("") + ylab("Proportion")
+
+# Vehicle Value
+ggplot(imp_2017[imp_2017$veh_value<=7.5,], aes(x=veh_value,fill = factor(claim_YN))) + 
+  geom_histogram(position = "stack", binwidth=.01) +
+  ggtitle("Claim by Vehicle value") + theme(plot.title = element_text(hjust=0.5)) +
+  xlab("")
+
+# Claims amount
+imp_2017 %>%
+  filter(claimcst0 != 0) %>%
+  select(claimcst0) %>%
+  mutate(quantile = ntile(claimcst0, 100)) %>%
+  filter(quantile<=90) %>%   # Removing high 10%iles because they are skewing the graph
+  ggplot(aes(claimcst0)) + 
+  geom_histogram(binwidth = 100,fill = "#F8766D", col = "black") +
+  scale_x_continuous(breaks = seq(80,9000,800)) +
+  ggtitle("Count by Claim amounts") + theme(plot.title = element_text(hjust=0.5)) +
+  xlab("")
+
+# Claims: Yes/No
+imp_2017 %>%
+  select(claim_YN) %>%
+  group_by(claim_YN) %>%
+  summarise(cnt = n()) %>%
+  ggplot(aes(x=factor(claim_YN),y=cnt,fill = factor(claim_YN))) + 
+  geom_bar(stat = "identity") + 
+  ggtitle("Count by Claims") + theme(plot.title = element_text(hjust=0.5)) + 
+  xlab("") 
+par(op) 
+```
+Following conclusions were drawn from the exploratory data analysis:
+
+  1. Men tend to claim more than females 
+  2. Younger drivers tend to have more claims and this trend decreases with age 
+  3. Drivers with lower credit scores claim more when proportion is considered
+  4. Higher Traffic_index is related to higher claims
+  
+# **Correlation**
+
+From the correlation matrix and jitter plot below we can say that:
+
+  1. `veh_value` and `veh_age` are strongly correlated (cor = `r round(cor(imp_2017$veh_value,imp_2017$veh_age),2)`): as intuition
+  2. Claim amount (`claimcst0`) is weakly correlated with credit score (cor = `r round(cor(imp_2017$claimcst0,imp_2017$credit_score),2)`)
+  3. `claimcst0` & `numclaims` are also correlated which obviosuly makes sense, since more the number of claims more will the total claim amount
+  4. **Jitter plot**: Majority of the Claims (Yes/No) seem to be coming from drivers with medium to higher credit score and is irrespective of age at first. 
+  
+```{r, echo=FALSE, fig.width=8, fig.height=6}
+cor_data<-imp_2017[,c(2,4,6,7,9,10,11)]
+M<-cor(cor_data)
+corrplot(M,method="number")
+ggplot(imp_2017,aes(x=age,y=credit_score)) + geom_jitter(aes(colour = factor(claim_YN)))
+```
+
+
+# **Data Modelling**
+
+After data processing and exploration, modelling was started with splitting the 2017 data into training (80%) and validation (20%) (pareto rule). A seed was set to make the results reproducible. Both the resulting training and validation (*named testing here*) had 16% of claims.
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=FALSE, results = "hide"}
+set.seed(500)
+# Training & Validation
+index<-sample(nrow(imp_2017),0.8*nrow(imp_2017), replace = FALSE)
+training<-imp_2017[index,-c(10,11)] # Removing the "numclaims" & "claimcst0"
+testing<-imp_2017[-index,-c(10,11)] # Removing the "numclaims" & "claimcst0"
+table(training$claim_YN)[2]/(table(training$claim_YN)[2]+table(training$claim_YN)[1])
+table(testing$claim_YN)[2]/(table(testing$claim_YN)[2]+table(testing$claim_YN)[1])
+```
+
+Three machine learning models were fit onto the training dataset for classification of potentially risky and non-risky claims. 
+
+### **Logistic Model**
+  
+  Logistic Regression was used as the baseline model to compare other models. ***AUC and misclassification rate were checked** for the validation set and the model which had the highest AUC and misclassification rate was selected for further comaprison with non-linear models. To start with , total three logistic models were compared:
+  
+  **Model 1:** `claim_YN ~ .`
+  
+  **Model 2:** `claim_YN ~ . - agecat`
+  
+  **Model 3:** `claim_YN ~ . - agecat - veh_age - veh_body`
+    
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=TRUE}
+log.fit1<-glm(claim_YN ~ .,family=binomial(link='logit'),data=training)
+log.fit2<-glm(claim_YN ~ .-agecat,family=binomial(link='logit'),data=training)
+log.fit3<-glm(claim_YN ~ .-agecat -veh_age -veh_body ,family=binomial(link='logit'),data=training)
+log.pred<-predict(log.fit2,testing,type = "response")
+```
+  Out of above three models, `Model 2` was selected because: 
+  
+  (1) it doesn't contain one of the redundant variables: `agecat` removed in order to reduce the variance inflation
+  (2) `Model 2` AIC value is slightly lower than model 3
+
+```{r eval = TRUE, echo = TRUE}
+AIC(log.fit2)
+AIC(log.fit3)
+```
+  Notable observations from Logistic Model `Model 2`:
+  
+  1. Response `claim_YN` has some linear relationship with `gender`, `age`, `credit_score`, `area` and `traffic_index`
+  2. Response `claim_YN` doesn't have linear relationship with other variables like `veh_value`, `veh_age` and `veh_body`
+
+So logistic model says that features related to vehicles don't play any role in claim.
+
+### **Random Forest**
+  
+  Next we fit a random forest model with all the variables. It was found that, here removing the variables actually increased the misclassification error on the validation set. Hence it was decided to keep a full model for random forest. Notable observations:
+  
+  1. Random Forest unearthed a possible **non-linear** relationship of `claim_YN` with `veh_value`, which logistic model was missing out
+  
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=TRUE}  
+set.seed(500)
+rf.fit<-randomForest(claim_YN ~ .-agecat,ntree = 100, data = training)
+rf.pred<-predict(rf.fit,testing,type = "prob")[,2]
+```
+```{r echo = FALSE, fig.height = 6, fig.width = 6}
+varImpPlot(rf.fit,type=2, main = "Credit Score and Traffic Index are the most important predictors")
+``` 
+ 
+### **Xtreme Boosting**
+
+Lastly `xgboost` model was fit. Here the model without `agecat` was better than a full model and a subset model in terms of misclassification rate o nthe validation set.
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=TRUE, results = "hide"}  
+predictors<-c("gender","age","credit_score","area","traffic_index","veh_age","veh_body","veh_value")
+output_vector<-as.numeric(training[,"claim_YN"])-1
+sparse_matrix_train <- sparse.model.matrix(claim_YN ~ ., data = training[,-3])[,-1]
+sparse_matrix_test <- sparse.model.matrix(claim_YN ~ ., data = testing[,-3])[,-1]
+set.seed(500)
+xg.fit <- xgboost(data = sparse_matrix_train, label = output_vector, max_depth = 6,
+               eta = 0.3, nthread = 2, nrounds = 200,objective = "binary:logistic")
+xgb.pred<-predict(xg.fit, sparse_matrix_test)
+```
+Below plot indicates the important variables:
+
+  1. `traffic_index` and `credit_score` still seem to be the most important predictors, followed by `gender`, `age` and `veh_value`
+
+```{r echo = FALSE, eval = TRUE, fig.align="center", fig.height = 6, fig.width = 6}
+importance <- xgb.importance(feature_names = colnames(sparse_matrix_train), model = xg.fit)
+xgb.plot.importance(importance_matrix = importance)
+```
+
+# **Model Comparison**
+
+Below plot shows the AUC curves for all the three models and reveals that **logistic model** is so far the best model.
+
+```{r warning=FALSE, error=FALSE, message=FALSE, eval=TRUE, echo=FALSE, fig.align="center", fig.height = 6, fig.width = 6}  
+preds_list <- list(log.pred,rf.pred,xgb.pred)
+m <- length(preds_list)
+actuals_list <- rep(list(testing$claim_YN), m)
+pred <- prediction(preds_list, actuals_list)
+rocs <- performance(pred, "tpr", "fpr")
+plot(rocs, col = as.list(1:m), main = "Validation Set ROC Curves")
+legend(x = "bottomright", legend = c("Logistic", "Random Forest", "XGBoost"),fill = 1:m)
+actual<-testing$claim_YN
+log_auc<-auc(actual = actual, predicted = log.pred)
+rf_auc<-auc(actual = actual, predicted = rf.pred)
+xgb_auc<-auc(actual = actual, predicted = xgb.pred)
+```
+```{r echo = FALSE, eval = TRUE, fig.align = "center"}
+kable(data.frame("Model" = c("Logistic Regression","Random Forest","XGBoost"),"AUC" = c(log_auc,rf_auc,xgb_auc)), "html") %>%
+  kable_styling() %>%
+  scroll_box(width = "500px", height = "185px")
+```
+### **Grid Search for cutoff probability**
+
+Logistic model `Model 2` was finalized because of its **higher AUC** value. Now using this model a cutoff probability was determined using the gridsearch in order to minimize the misclassification rate. A cutoff probabilty would determine what risk probability is enough beyond which we can't classify someone as a sale customer.  
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = TRUE, fig.align="center", fig.height = 6, fig.width = 6} 
+pr<-seq(0,1,0.02)
+accry<-c()
+for(i in 1:length(pr)){
+  log.pred<-ifelse(predict(log.fit2,testing,type = "response") >= pr[i],1,0)
+  accry[i]<-sum(log.pred == testing$claim_YN)/nrow(testing)
+}
+log.tab<-data.frame(cbind("prob" = pr, "accuracy" = accry))
+ggplot(log.tab,aes(x=prob,y=accuracy)) + 
+  geom_point(show.legend=F) + 
+  xlab("Threshold cutoff probability") + 
+  ylab("Accuracy") + 
+  ggtitle("Threshold Vs Accuracy (Logistic)") + theme(plot.title = element_text(hjust=0.5)) + 
+  geom_point(aes(x=log.tab[log.tab$accuracy==max(log.tab$accuracy),][[1]],y=log.tab[log.tab$accuracy==max(log.tab$accuracy),][[2]],colour="red",cex=4))
+```
+
+Final predictions were made using the above found cutoff probability (`r log.tab[log.tab$accuracy==max(log.tab$accuracy),][[1]]`) and saved in the file.
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = TRUE, results = "hide"}
+final_predictions<-data.frame(cbind("Quote Numbers" = quote_number,imp_2018,"Risk" = ifelse(predict(log.fit1,imp_2018,type = "response")>=0.48,1,0)))
+table(final_predictions$Risk)
+potential_non_risky<-data.frame("Quote Numbers" = final_predictions[final_predictions$Risk==0,1])
+potential_risky<-data.frame("Quote Numbers" = final_predictions[final_predictions$Risk==1,1])
+write.csv(potential_non_risky,"potential_non_risky_customers.csv", row.names = FALSE)
+```
+
+
+# <span style="color:blue">**SECTION 2:**</span>
+
+## **IDENTIFYING POTENTIAL LOW RISK CUSTOMERS** 
+
+<span style="color:red">**ASSUMPTON:**</span> LOW RISK customers needed to be defined. So in this section we would mean the bottom 15% customers in terms of risk among all risky customers. (This is %ile can be any number according to business requirement).
+
+Section 1 identified potential risky customers, this section calculated the potential cost for the claims in the cases where we can expect a claim to happen. Below code calculates the cost per claim per policy by taking the ratio of `claimcst0` & `numclaims`, after filtering for risky customers only. 
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = TRUE, fig.align="center", fig.height = 5, fig.width = 5}
+claim_cust<-imp_2017 %>%
+  mutate(cost_per_claim = ifelse(is.nan(claimcst0/numclaims),0,round((claimcst0/numclaims),2))) %>%
+  select(-c(10:12)) %>%
+  filter(cost_per_claim>0)
+```
+
+Below corrleation matrix and histogram suggest that: 
+
+  1. New variable `cost_per_claim` is mildly correlated with `veh_age` and `veh_value`
+  2. `cost_per_claim` is highly skewed (and thus needs a log transformation)
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = FALSE, fig.align="center", fig.height = 6, fig.width = 6}
+cor_data<-claim_cust[,c(2,4,6,7,9,10)]
+M<-cor(cor_data)
+corrplot(M,method="number")
+```
+
+**Before log transformation:** 
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = FALSE}
+ggplot(claim_cust,aes(cost_per_claim)) + 
+  geom_histogram(binwidth = 500,fill = "steelblue", col = "black") +
+  scale_x_continuous(limits = c(min(claim_cust$cost_per_claim), 45000)) +
+  ggtitle("Cost per claim is highly skewed") + theme(plot.title = element_text(hjust=0.5))
+```
+
+**After log transformation:** 
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = FALSE}
+claim_cust$cost_per_claim<-log(claim_cust$cost_per_claim)
+ggplot(claim_cust,aes(cost_per_claim)) + 
+  geom_histogram(fill = "steelblue", col = "black") +
+  ggtitle("Cost per claim after log transformation") + theme(plot.title = element_text(hjust=0.5))
+```
+
+# **Data Modelling**
+
+Once again we would split our data into 80-20. 
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE}
+set.seed(500)
+index<-sample(nrow(claim_cust),0.8*nrow(claim_cust),replace = FALSE)
+training<-claim_cust[index,]
+testing<-claim_cust[-index,]
+```
+### **Multiple Linear Regression**
+
+Multiple Linear Regression was used as the baseline model to compare other models. **Mean Squared Error** was checked for the validation set and the linear model which had the lowest **MSE** was selected for further comaprison with non-linear models. To start with, total three linear models were compared:
+  
+  **Model 1:** `cost_per_claim ~ .`
+  
+  **Model 2:** `cost_per_claim ~ .- agecat`
+  
+  **Model 3:** `cost_per_claim ~ .-veh_age -agecat`
+
+Notable observations (after looking at model `summaries`):
+
+  1. In full model `Model 1`, coefficient sign of `age` changed from -ve to +ve showing its collinearity with `agecat`
+  2. After removing `veh_age`, the positive coefficient of `veh_value` increased (showing effect of collinearity with `veh_age`)
+  
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, fig.align="center"}
+lm.cpc.fit1<-lm(cost_per_claim ~ .,data = training)
+lm.cpc.fit2<-lm(cost_per_claim ~ .- agecat,data = training) 
+lm.cpc.fit3<-lm(cost_per_claim ~ .-veh_age -agecat,data = training)
+lm.mse1<-sum((predict(lm.cpc.fit1,testing)-testing$cost_per_claim)^2)/nrow(testing)
+lm.mse2<-sum((predict(lm.cpc.fit2,testing)-testing$cost_per_claim)^2)/nrow(testing)
+lm.mse3<-sum((predict(lm.cpc.fit3,testing)-testing$cost_per_claim)^2)/nrow(testing)
+```
+`Model 1` was selected among linear models for further comparison becuase of its low MSE `r lm.mse1` (others being `r lm.mse2` & `r lm.mse3`). 
+
+### **Residual Analysis**
+
+Below is the residual plot which assures that the normality assumption was not violated.
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, fig.align="center", fig.height = 5, fig.width = 5}
+plot(lm.cpc.fit1)
+```
+
+### **Random Forest**
+
+Next a random forest model was fit with all variables. Again removing the variables actually increased the **MSE** on the validation set. Hence it was decided to keep a full model for random forest.  
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE}
+set.seed(500)
+rf.cpc.fit1<-randomForest(cost_per_claim ~ ., ntree = 300,data = training)
+rf.mse1<-sum((predict(rf.cpc.fit1,testing)-testing$cost_per_claim)^2)/nrow(testing)
+plot(rf.cpc.fit1)
+```
+
+Notable observations:
+
+  1. Unlike binary variable `claim_YN`, vehicle factors like `veh_value` and `veh_age` are coming out to be significant for `cost_per_claim`
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE,fig.align="center", fig.height = 6, fig.width = 6}
+varImpPlot(rf.cpc.fit1,type=2, main = "Credit Score and Vehicle age are the most important predictors")
+```
+
+### **Xtreme Boosting**
+
+`Xgboost` was used to fit a thrid model. Here it was found that while full model was not best but removing `veh_age` was not appropriate unlike randomForest. So here we would be keeping `model 2`
+
+  **Model 1:** `cost_per_claim ~ .`
+  
+  **Model 2:** `cost_per_claim ~ .- agecat`
+  
+  **Model 3:** `cost_per_claim ~ .-veh_age -agecat`
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = TRUE, results = "hide"}
+output_vector<-as.numeric(training[,"cost_per_claim"])
+sparse_matrix_train <- sparse.model.matrix(cost_per_claim ~ ., data = training[,-3])[,-1]
+sparse_matrix_test <- sparse.model.matrix(cost_per_claim ~ ., data = testing[,-3])[,-1]
+set.seed(500)
+xg.fit2 <- xgboost(data = sparse_matrix_train, label = output_vector, max_depth = 6,
+                   eta = 0.3, nthread = 2, nrounds = 200,objective = "reg:linear")
+importance <- xgb.importance(feature_names = colnames(sparse_matrix_train), model = xg.fit2)
+xgb.mse2<-sum((predict(xg.fit2, sparse_matrix_test)-testing$cost_per_claim)^2)/nrow(testing)
+```
+
+Notable observation: 
+
+  1. Same as random forest, vehicle factors and credit score are coming out to be important.
+  
+```{r warning = FALSE, message = FALSE, error = FALSE, echo = FALSE, eval = TRUE, fig.align="center", fig.height = 6, fig.width = 6}
+xgb.plot.importance(importance_matrix = importance)
+```
+
+Since MSE was the lowest for the linear model `r lm.mse1` than others (Random Forest = `rf.mse1` & XGboost = `xgb.mse2`), we would use this model fro the predictions.
+
+## **Final predictions**
+
+Code below does anti-log of previously transformed `cost_per_claim` The file `potential_low_risky_customers.csv` which is getting extracted below would be having bottom 15% low risk customers.
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = TRUE}
+potential_risky<-data.frame(cbind(potential_risky,
+                       "Cost_Per_Claim" = predict(lm.cpc.fit1,final_predictions[final_predictions$Quote.Numbers %in% potential_risky$Quote.Numbers,-c(1,11)])))
+potential_risky$real_cost_per_claim<-exp(potential_risky$Cost_Per_Claim)
+low_risky<-potential_risky %>%
+  mutate(quantile = ntile(real_cost_per_claim, 100)) %>%
+  filter(quantile<=15) %>% # Selecting las t15%iles to be low-risky customers (selection of cutoff depends on business)
+  select(Quote.Numbers)
+write.csv(low_risky,"potential_low_risky_customers.csv",row.names = FALSE)
+```
+
+
+# <span style="color:blue">**SECTION 3:**</span>
+
+## **RISK PROFILING**
+
+In order to profile the customers into risk groups, an optimum number of clusters was required such that the groups would be as different as possible. To achieve this, **Partition Around Medoids** realisation of [`K-medoid`](https://en.wikipedia.org/wiki/K-medoids) clustering algorithm was used , which suggested an optimum number of **4** segments. 
+
+<span style="color:red">**ASSUMPTION:**</span> To profile customers based on their risks to claim, certain weigths were given to the features according to their importance/significance till now in the analysis. For example: `Risk_Prob` was given the highest weight 7, followed by `traffic_index`,`credit_score` and `gender`,`age` and `veh_body` were given the least.
+
+### **Silhoutte Analysis**
+
+Below code does the follwoing steps in order: 
+
+1. filters the risky customers, 
+2. attaches their risk probability as a new column, 
+3. calculates the **gower** distance between the policies 
+4. using the grid-search searches for the optimal number of cluster which maximizes the **silhoutte** . It suggests using **4** clusters based on the given feature weights. 
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = TRUE, fig.align="center", fig.height = 5, fig.width = 5}
+features<-c("Quote.Numbers","gender","age","credit_score","area","traffic_index",
+            "veh_age","veh_body","veh_value","Risk","Cost_Per_Claim","real_cost_per_claim") 
+
+cust_all_risk<-final_predictions %>%
+  mutate("Risk_Prob" = predict(log.fit1,imp_2018,type = "response")) %>%
+  # select(c("Quote.Numbers","gender","age","credit_score","veh_body","veh_value","traffic_index","Risk","Risk_Prob")) %>%
+  select(c("Quote.Numbers","age","credit_score","veh_value","traffic_index","Risk_Prob","Risk")) %>%
+  filter(Risk == 1) %>%
+  select(c("Quote.Numbers","age","credit_score","veh_value","traffic_index","Risk_Prob"))
+  
+# "gender"        "age"           "credit_score"  "veh_value"     "traffic_index" "Risk"          "Risk_Prob"     
+# Calculate Gower Distance
+gower_dist <- daisy(cust_all_risk[,-1],metric = "gower", type = list(logratio = c(1,2,3,4,5))) # , weights = c(2,3,7,4,5,7,0,8)
+# Log transformation for positively skewed variables: FAMILY_TOT_SALES, FAMILY_TOT_VISITS
+
+
+# Calculate optimal number of clusters
+sil_width <- c(NA)
+for(i in 2:13){
+  set.seed(i)
+  pam_fit<-pam(gower_dist, diss = TRUE,k = i)  # PAM: Partitioning Around Medoids 
+  sil_width[i]<-pam_fit$silinfo$avg.width
+}
+tab<-data.frame(x=1:13,sil_width=sil_width)
+
+
+ggplot(data=tab,aes(x = x,y = sil_width)) + 
+  geom_point(cex=3,col="red")+geom_line() + 
+  ggtitle("Silhoutte Width Vs Number of clusters") + 
+  theme(plot.title = element_text(hjust=0.5)) + 
+  xlab("Number of clusters")
+# Number of clusters suggested by silhoutte analysis: 5
+```
+
+# **Final Risk Segments**
+
+Next we group the risky customers using `pam()` from `cluster` package based on **gower** distance. Below are the final visualization of the four risk segments:
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = TRUE, fig.align="center", fig.height = 5, fig.width = 6}
+set.seed(5)
+pam_fit<-pam(gower_dist, diss=TRUE, k = 5)
+cust_all_risk<-cbind(cust_all_risk, Group = pam_fit$clustering)
+tsne_obj <- Rtsne(gower_dist, is_distance = TRUE)
+tsne_data <- tsne_obj$Y %>%
+  data.frame() %>%
+  setNames(c("X", "Y")) %>%
+  mutate(cluster = factor(pam_fit$clustering),
+         name = cust_all_risk$Quote.Numbers)
+ggplot(aes(x = X, y = Y), data = tsne_data) + 
+  geom_point(aes(color = cluster)) + 
+  ggtitle("Customer Segments") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = FALSE}
+fin_segment<-cust_all_risk %>%
+  group_by(Group) %>%
+  summarise(count_cust = n(),avg_age = round(mean(age),2)
+                            ,min_prob =  round(min(Risk_Prob),2), med_prob = round(median(Risk_Prob),2), max_prob = round(max(Risk_Prob),2)
+                            ,min_cred_scr =  round(min(credit_score),2), med_cred_scr = round(median(credit_score),2), max_cred_scr = round(max(credit_score),2)
+                            ,min_tf_in =  round(min(traffic_index),2), med_tf_in = round(median(traffic_index),2), max_tf_in = round(max(traffic_index),2)
+                            )
+```
+
+This is how the final segments land their group averages for `age`, `probability of risk` `credit_score` and `traffic_index` look like.
+
+```{r warning = FALSE, message = FALSE, error = FALSE, eval = TRUE, echo = FALSE}
+fin_segment %>%
+  arrange(Group) %>%
+  mutate_if(is.numeric, function(x) {
+    cell_spec(x, bold = T, 
+              color = spec_color(x, end = 0.9),
+              font_size = spec_font_size(x))
+  }) %>%
+  kable(escape = F, align = "c") %>%
+  kable_styling(c("striped", "condensed"), full_width = F)
+```
+
+Here's the summary and key take-aways of the above segments:
+
+* **Group 5** is the segment of most risky drivers because they have low credit scores and higher traffic index on average
+* **Group 4** is the segment of safe middle-aged drivers having good credit scores
+
+NOTE: Ideal number of segments suggested was 11, but 11 number of segments was too large for the campaigns and 5 was a trade-off number. 
